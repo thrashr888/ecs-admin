@@ -11,10 +11,10 @@ var cachedUrl = '/';
 
 var scripts = [
   'js/aws-sdk-ecs.js',
-  'bower_components/react/react.min.js',
-  'bower_components/react/react-with-addons.min.js',
+  'bower_components/react/react.js',
+  'bower_components/react/react-with-addons.js',
   'bower_components/react/JSXTransformer.js',
-  'bower_components/reflux/dist/reflux.min.js',
+  'bower_components/reflux/dist/reflux.js',
   'js/main.jsx',
 ];
 
