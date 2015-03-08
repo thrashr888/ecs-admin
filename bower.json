@@ -1,0 +1,29 @@
+{
+  "name": "ecs-admin",
+  "version": "0.0.0",
+  "authors": [
+    "thrashr888 <thrashr888@gmail.com>"
+  ],
+  "description": "ECS Admin",
+  "keywords": [
+    "ecs",
+    "aws",
+    "ec2",
+    "docker"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "aws-sdk": "~2.1.14",
+    "aws-sdk-js": "git://github.com/aws/aws-sdk-js",
+    "react": "~0.12.2",
+    "bootstrap": "~3.3.2",
+    "reflux": "~0.2.6"
+  }
+}

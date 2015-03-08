@@ -1,0 +1,12 @@
+{
+  "containerDefinitions": [
+    {
+      "image": "postgres:9.4",
+      "name": "postgres",
+      "essential": true,
+      "memory": 500,
+      "cpu": 10
+    }
+  ],
+  "family": "postgres"
+}

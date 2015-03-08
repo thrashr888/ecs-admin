@@ -1,0 +1,12 @@
+{
+  "containerDefinitions": [
+    {
+      "image": "redis:latest",
+      "name": "redis",
+      "essential": true,
+      "memory": 128,
+      "cpu": 10
+    }
+  ],
+  "family": "redis"
+}

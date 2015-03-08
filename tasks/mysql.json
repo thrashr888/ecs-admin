@@ -1,0 +1,18 @@
+{
+  "containerDefinitions": [
+    {
+      "environment": [
+        {
+          "name": "ny9t0w7ew9r0yt7w",
+          "value": "password"
+        }
+      ],
+      "name": "mysql",
+      "image": "mysql",
+      "essential": true,
+      "memory": 500,
+      "cpu": 10
+    }
+  ],
+  "family": "mysql"
+}
