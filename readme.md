@@ -3,7 +3,13 @@
 Build
 -----
 
-    npm install
-    bower install
-    node ../aws-sdk-js/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > ../ecs-admin/js/aws-sdk-ecs.js
+    
+    > npm install
+    > bower install
 
+Run
+---
+
+     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server /usr/local/Cellar/iojs/1.5.1/bin/iojs server.js
+     // or
+     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server node server.js

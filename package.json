@@ -1,6 +1,6 @@
 {
   "name": "ecs-admin",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "ECS Admin",
   "main": "index.js",
   "scripts": {
@@ -15,15 +15,36 @@
   "author": "Paul Thrasher <thrashr888@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "bootstrap": "^3.3.2",
+    "http2": "^3.2.0",
+    "level-js": "^2.1.6",
+    "mime-types": "^2.0.9",
+    "react": "^0.13.0",
+    "reflux": "^0.2.6"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.1.16",
+    "babelify": "^5.0.4",
+    "browserify": "^9.0.3",
     "bunyan": "^1.3.4",
     "debug": "^2.1.2",
-    "http-query-parse": "^2.2.1",
-    "http2": "^3.2.0",
-    "koa": "^0.18.1",
-    "koa-route": "^2.4.0",
-    "koa-static": "^1.4.9",
-    "koa-swig": "^1.3.0",
-    "koala": "^0.9.1",
-    "mime-types": "^2.0.9"
+    "gulp": "^3.8.11",
+    "gulp-autoprefixer": "^2.1.0",
+    "gulp-browserify": "^0.5.1",
+    "gulp-cache": "^0.2.8",
+    "gulp-connect": "^2.2.0",
+    "gulp-imagemin": "^2.2.1",
+    "gulp-load-plugins": "^0.8.1",
+    "gulp-plumber": "^1.0.0",
+    "gulp-rename": "^1.2.0",
+    "gulp-rm": "^1.0.0",
+    "gulp-sass": "^1.3.3",
+    "gulp-size": "^1.2.1",
+    "gulp-sourcemaps": "^1.5.0",
+    "gulp-useref": "^1.1.1",
+    "reactify": "^1.0.0"
+  },
+  "scripts": {
+    "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js"
   }
 }

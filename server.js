@@ -6,16 +6,19 @@ var mime = require('mime-types')
 var url = require('url');
 
 // We cache one file to be able to do simple performance tests without waiting for the disk
-var cachedFile = fs.readFileSync(path.join(__dirname, './index.html'));
+var cachedFile = fs.readFileSync(path.join(__dirname, './templates/index.html'));
 var cachedUrl = '/';
 
 var scripts = [
-  'js/aws-sdk-ecs.js',
+  'scripts/main.js',
+  'scripts/aws-sdk-ecs.js',
   'bower_components/react/react.js',
   'bower_components/react/react-with-addons.js',
   'bower_components/react/JSXTransformer.js',
   'bower_components/reflux/dist/reflux.js',
-  'js/main.jsx',
+  'scripts/main.jsx',
+  'bower_components/bootstrap/dist/css/bootstrap.css',
+  'bower_components/bootstrap/dist/css/bootstrap-theme.css',
 ];
 
 function pushFile (response, filename) {
@@ -34,8 +37,8 @@ function onRequest(request, response) {
   var filename = path.join(__dirname, req.pathname);
 
   // debug('request', req)
-  debug('<--', request.url)
-  
+  debug('<--', request.url);
+
   // Serving server.js from cache. Useful for microbenchmarks.
   if (req.pathname === cachedUrl) {
   	// debug('response', response)
@@ -61,6 +64,7 @@ function onRequest(request, response) {
   // Otherwise responding with 404.
   else {
     response.writeHead('404');
+    debug('404', request.url);
     response.end();
   }
 }
