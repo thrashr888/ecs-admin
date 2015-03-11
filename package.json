@@ -4,7 +4,7 @@
   "description": "ECS Admin",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js"
   },
   "keywords": [
     "ecs",
@@ -15,12 +15,15 @@
   "author": "Paul Thrasher <thrashr888@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "bootstrap": "^3.3.2",
+    "bootstrap-sass": "^3.3.3",
+    "connect-livereload": "^0.5.3",
+    "express": "^4.12.2",
     "http2": "^3.2.0",
     "level-js": "^2.1.6",
     "mime-types": "^2.0.9",
     "react": "^0.13.0",
-    "reflux": "^0.2.6"
+    "reflux": "^0.2.6",
+    "spdy": "^1.31.0"
   },
   "devDependencies": {
     "aws-sdk": "^2.1.16",
@@ -33,8 +36,10 @@
     "gulp-browserify": "^0.5.1",
     "gulp-cache": "^0.2.8",
     "gulp-connect": "^2.2.0",
+    "gulp-express": "^0.3.0",
     "gulp-imagemin": "^2.2.1",
     "gulp-load-plugins": "^0.8.1",
+    "gulp-nodemon": "^1.0.5",
     "gulp-plumber": "^1.0.0",
     "gulp-rename": "^1.2.0",
     "gulp-rm": "^1.0.0",
@@ -43,8 +48,5 @@
     "gulp-sourcemaps": "^1.5.0",
     "gulp-useref": "^1.1.1",
     "reactify": "^1.0.0"
-  },
-  "scripts": {
-    "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js"
   }
 }

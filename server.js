@@ -6,8 +6,12 @@ var mime = require('mime-types')
 var url = require('url');
 
 // We cache one file to be able to do simple performance tests without waiting for the disk
-var cachedFile = fs.readFileSync(path.join(__dirname, './templates/index.html'));
+var cachedFile = fs.readFileSync(path.join(__dirname, 'dist', 'index.html'));
 var cachedUrl = '/';
+
+// var servePath = process.argv[2];
+// debug('path', servePath)
+// debug('argv', process.argv)
 
 var scripts = [
   'scripts/main.js',
@@ -27,14 +31,14 @@ function pushFile (response, filename) {
 
   push.setHeader('Content-Type', mime.lookup(filename));
 	push.writeHead(200);
-	fs.createReadStream(path.join(__dirname, '/' + filename)).pipe(push);
+	fs.createReadStream(path.join(__dirname, filename)).pipe(push);
 }
 
 // The callback to handle requests
 function onRequest(request, response) {
   req = url.parse(request.url);
 
-  var filename = path.join(__dirname, req.pathname);
+  var filename = path.join(__dirname, 'dist', req.pathname);
 
   // debug('request', req)
   debug('<--', request.url);

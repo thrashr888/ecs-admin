@@ -210,7 +210,7 @@ window.onAmazonLoginReady = function() {
 
 var ContainerInstanceComponent = React.createClass({
   componentDidMount: function () {
-	var self = this;
+	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.containerInstance)).open(function(changes) {
 		self.forceUpdate();
 	});
@@ -243,7 +243,7 @@ var ContainerInstanceComponent = React.createClass({
 
 var TaskComponent = React.createClass({
   componentDidMount: function () {
-	var self = this;
+	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.task)).open(function(changes) {
 		self.forceUpdate();
 	});
@@ -297,7 +297,7 @@ var TaskComponent = React.createClass({
 
 var FamilyComponent = React.createClass({
 	componentDidMount: function () {
-		var self = this;
+		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.family)).open(function(changes) {
 			self.forceUpdate();
 		});
@@ -329,7 +329,7 @@ var FamilyComponent = React.createClass({
 
 var ContainerDefinitionComponent = React.createClass({
 	componentDidMount: function () {
-		var self = this;
+		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.containerDefinition)).open(function(changes) {
 			self.forceUpdate();
 		});
@@ -356,7 +356,7 @@ var ContainerDefinitionComponent = React.createClass({
 
 var TaskDefinitionComponent = React.createClass({
 	componentDidMount: function () {
-		var self = this;
+		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.taskDefinition)).open(function(changes) {
 			self.forceUpdate();
 		});
@@ -389,7 +389,7 @@ var TaskDefinitionComponent = React.createClass({
 
 var ClusterComponent = React.createClass({
   componentDidMount: function () {
-	var self = this;
+	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.cluster)).open(function(changes) {
 		self.forceUpdate();
 	});
@@ -450,7 +450,7 @@ var UserComponent = React.createClass({
   },
 
   componentDidMount: function () {
-	var self = this;
+	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
 		self.forceUpdate();
 	});
