@@ -13,6 +13,29 @@ var onError = function (err) {
 };
 
 
+gulp.task('set-production', function () {
+    process.env.BUILD_ENV = 'production';
+});
+gulp.task('set-development', function () {
+    process.env.BUILD_ENV = 'development';
+});
+
+// Deploy
+gulp.task('deploy', ['set-production', 'build'], function () {
+    var aws = {
+        key: process.env.AWS_ACCESS_KEY_ID,
+        secret: process.env.AWS_SECRET_ACCESS_KEY,
+        bucket: process.env.S3_BUCKET,
+        region: process.env.S3_REGION || 'us-east-1',
+    };
+    var options = {headers: {
+        'x-amz-acl': 'public-read'
+    }};
+    gulp.src('dist/**')
+        .pipe($.s3(aws, options));
+});
+
+
 // Styles
 gulp.task('styles', function () {
     return gulp.src('styles/*.scss')
@@ -27,7 +50,10 @@ gulp.task('styles', function () {
 
 // Scripts
 gulp.task('scripts', function () {
+
+    // affects the compilation of aws-sdk-js
     process.env.AWS_SERVICES = 'ecs,ec2,cognitoidentity';
+
     return gulp.src(['scripts/main.jsx'], { read: false })
         .pipe($.browserify({
             transform: [
@@ -36,17 +62,18 @@ gulp.task('scripts', function () {
                 require('babelify').configure({
                   experimental: true
                 }),
-                ['reactify', {'es6': true}]
+                ['reactify', {es6: true}],
+                ['envify', {BUILD_ENV: process.env.BUILD_ENV}]
             ],
-            insertGlobals : false,
+            insertGlobals : true,
             extensions: ['.jsx'],
             harmony: true,
-            // debug: !gulp.env.production
+            debug: !(process.env.BUILD_ENV === 'production')
         }))
         .pipe($.rename(function (path) {
             path.extname = '.js';
         }))
-        // .pipe($.jshint('.jshintrc'))
+        // .pipe($.jshint('.jshintrc')) // too slow
         // .pipe($.jshint.reporter('default'))
         .pipe(gulp.dest('dist/scripts'))
         .pipe($.size());
@@ -128,7 +155,7 @@ gulp.task('server', function() {
 
 
 // Watch
-gulp.task('watch', ['html', 'bundle', 'server'], function () {
+gulp.task('watch', ['set-development', 'html', 'bundle', 'server'], function () {
 
     // Watch .html files
     gulp.watch('templates/*.html', ['html']);

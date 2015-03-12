@@ -4,18 +4,42 @@
 var AWS = require('aws-sdk');
 var React = require('react');
 var ObserveJs = require('observe-js');
+var $ = require('jquery');
+var leveljs = require('level-js');
+var PouchDB = require('pouchdb');
 
 //
 // CONFIG
 //
 
-var region = 'us-east-1';
-var identityPoolId = 'us-east-1:20701a07-93a0-422b-b716-9b603f046851';
-var clientId = 'amzn1.application-oa2-client.9bd2fa783c5241eba056c88923158d53';
-var user = {
-	clusters: []
+var Config = {
+    env: process.env.BUILD_ENV,
+    // hostname: '', // local
+    // hostname: 'http://thrashr888-ecs-admin.s3-website-us-east-1.amazonaws.com',
+    hostname: 'https://d3csuswr8p8yjt.cloudfront.net',
+    account: localStorage.getItem('account') || 'testaccount',
+    region: 'us-east-1',
+    identityPoolId: null,
+    clientId: null,
 };
+if (Config.env === 'prod') {
+    Config.hostname = '';
+}
+console.debug('Config', Config);
+
+var user = {};
 var ecs;
+
+// just testing
+var db2 = new PouchDB('ecs-admin');
+db2.put({
+  _id: 'dave@gmail.com',
+  name: 'David',
+  age: 68
+});
+db2.changes().on('change', function() {
+  console.log('Ch-Ch-Changes');
+});
 
 //
 // DATA
@@ -158,12 +182,12 @@ function fetchData () {
 }
 
 function onLogin (access_token) {
-	AWS.config.region = region;
+	AWS.config.region = Config.region;
 	AWS.config.sslEnabled = true;
 	// AWS.config.logger = console;
 
 	AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-		IdentityPoolId: identityPoolId,
+		IdentityPoolId: Config.identityPoolId,
 		Logins: {
 			'www.amazon.com': access_token
 		}
@@ -196,12 +220,19 @@ function retrieveProfile (access_token) {
 		onLogin(access_token);
 	});
 }
-window.onAmazonLoginReady = function() {
-	amazon.Login.setClientId(clientId);
-	var access_token = localStorage.getItem('amazon_oauth_access_token');
-	if (access_token) {
-		retrieveProfile(access_token);
-	}
+window.onAmazonLoginReady = function(cb) {
+    $.get(Config.hostname + '/accounts/' + Config.account + '.json', function getResponse(res) {
+        // console.debug('res', res)
+        Config.identityPoolId = res.identityPoolId;
+        Config.clientId = res.clientId;
+
+        amazon.Login.setClientId(Config.clientId);
+        var access_token = localStorage.getItem('amazon_oauth_access_token');
+        if (access_token) {
+            retrieveProfile(access_token);
+        }
+        if (cb) cb();
+    });
 };
 
 //
@@ -411,7 +442,7 @@ var ClusterComponent = React.createClass({
   	}
   },
 
-  render: function() {
+  render: function () {
   	console.debug('cluster.props', this.props.cluster);
   	var self = this, tasks = [];
 	// console.log('tasks', this.props.cluster)
@@ -438,6 +469,50 @@ var ClusterComponent = React.createClass({
 		</div>
     );
   }
+});
+
+var LoggedOutComponent = React.createClass({
+
+  getInitialState: function () {
+    return {
+        account: Config.account,
+    };
+  },
+
+  updateAccount: function (event) {
+    Config.account = event.target.value;
+    this.setState({account: Config.account});
+    localStorage.setItem('account', Config.account);
+  },
+
+  loginClick: function () {
+    console.debug('log in');
+    let options = { scope : 'profile' };
+    window.onAmazonLoginReady();
+    amazon.Login.authorize(options,  function(response) {
+        if (response.error) {
+            console.error(response.error);
+            return;
+        }
+        localStorage.setItem('amazon_oauth_access_token', response.access_token);
+        retrieveProfile(response.access_token);
+    });
+  },
+
+    render: function () {
+        var account = this.state.account;
+        return (
+            <div className="loggedOut">
+                <p><input value={account} onChange={this.updateAccount} /></p>
+
+                <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
+                  <img border="0" alt="Login with Amazon"
+                    src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
+                    width="156" height="32" />
+                </a>
+            </div>
+        );
+    }
 });
 
 var UserComponent = React.createClass({
@@ -467,13 +542,6 @@ var UserComponent = React.createClass({
 		localStorage.setItem('amazon_oauth_access_token', response.access_token);
 		retrieveProfile(response.access_token);
 	});
-  },
-
-  logoutClick: function () {
-  	console.debug('log out');
-  	amazon.Login.logout();
-  	user = {};
-  	localStorage.removeItem('amazon_oauth_access_token');
   },
 
   createCluster: function () {
@@ -538,34 +606,24 @@ var UserComponent = React.createClass({
     var registerTaskText = this.state.registerTaskText;
     return (
     	<div className="user">
-			<p>
-				{ this.props.user.fetching ? <p>Loading...</p> : null }
-	    		{ !this.props.user.profile ?
-					<a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
-					  <img border="0" alt="Login with Amazon"
-					    src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
-					    width="156" height="32" />
-					</a>
-					:
-					<a href="#" id="Logout" onClick={this.logoutClick}>Logout</a>
-				}
-			</p>
+			<div>
+	    		<p><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></p>
+                { this.props.user.fetching ? <p>Loading...</p> : null }
+			</div>
 
-	    	{ this.props.user.profile ? <h1>User: {this.props.user.profile.Name}</h1> : null }
+	    	<h1>User: {this.props.user.profile.Name}</h1>
 
 	    	<hr />
 
 	    	<h2>Clusters</h2>
 	    	{ clusters }
-
-	    	{ this.props.user.profile ? <a href="#" onClick={this.createCluster}>Create Cluster</a> : null }
+	    	<p><a href="#" onClick={this.createCluster}>Create Cluster</a></p>
 
 	    	<hr />
 
 	    	<h2>Task Definitions</h2>
 	    	{ families }
-
-			{ this.props.user.profile ? <p><a href="#" onClick={this.toggleRegisterTaskModal}>Register Task Definition</a> ▼</p> : null }
+			<p><a href="#" onClick={this.toggleRegisterTaskModal}>Register Task Definition</a> ▼</p>
 			{ this.state.registerTaskModal ? <div>
 				<h3>Register a Task</h3>
 				<textarea rows="20" cols="120" value={registerTaskText} onChange={this.registerTaskTextChange}></textarea>
@@ -576,7 +634,25 @@ var UserComponent = React.createClass({
   }
 });
 
+var PageComponent = React.createClass({
+
+  componentDidMount: function () {
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.user)).open(function(added, removed, changed, getOldValueFn) {
+        if (added.profile) self.forceUpdate();
+    });
+  },
+
+    render: function () {
+        return (
+            <div className="page">
+                { this.props.user.profile ? <UserComponent user={this.props.user} /> : <LoggedOutComponent /> }
+            </div>
+        );
+    }
+});
+
 React.render(
-	<UserComponent user={user}></UserComponent>,
+	<PageComponent user={user}></PageComponent>,
 	document.getElementById('App')
 );
