@@ -52,7 +52,7 @@ gulp.task('styles', function () {
 gulp.task('scripts', function () {
 
     // affects the compilation of aws-sdk-js
-    process.env.AWS_SERVICES = 'ecs,ec2,cognitoidentity';
+    process.env.AWS_SERVICES = 'ecs,ec2,s3,cognitoidentity';
 
     return gulp.src(['scripts/main.jsx'], { read: false })
         .pipe($.browserify({

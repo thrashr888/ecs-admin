@@ -6,7 +6,8 @@ var React = require('react');
 var ObserveJs = require('observe-js');
 var $ = require('jquery');
 var leveljs = require('level-js');
-var PouchDB = require('pouchdb');
+window.PouchDB = require('pouchdb');
+// PouchDB.debug.enable('*');
 
 //
 // CONFIG
@@ -16,34 +17,97 @@ var Config = {
     env: process.env.BUILD_ENV,
     // hostname: '', // local
     // hostname: 'http://thrashr888-ecs-admin.s3-website-us-east-1.amazonaws.com',
+    bucketName: 'thrashr888-ecs-admin',
     hostname: 'https://d3csuswr8p8yjt.cloudfront.net',
     account: localStorage.getItem('account') || 'testaccount',
     region: 'us-east-1',
     identityPoolId: null,
     clientId: null,
 };
-if (Config.env === 'prod') {
+if (Config.env === 'production') {
     Config.hostname = '';
 }
 console.debug('Config', Config);
 
 var user = {};
 var ecs;
+var s3;
 
 // just testing
-var db2 = new PouchDB('ecs-admin');
-db2.put({
-  _id: 'dave@gmail.com',
-  name: 'David',
-  age: 68
-});
-db2.changes().on('change', function() {
-  console.log('Ch-Ch-Changes');
-});
+// var db2 = new PouchDB('ecs-admin');
+// db2.put({
+//   _id: 'dave@gmail.com',
+//   name: 'David',
+//   age: 68
+// });
+// db2.changes().on('change', function() {
+//   console.log('Ch-Ch-Changes');
+// });
+
+var configDB = new PouchDB('ecsa.config');
+var familyDB = new PouchDB('ecsa.family');
+var taskDefinitionDB = new PouchDB('ecsa.taskDefinition');
+var clusterDB = new PouchDB('ecsa.cluster');
+var containerInstanceDB = new PouchDB('ecsa.containerInstance');
+var taskDB = new PouchDB('ecsa.task');
+
+
+//
+// UTILS
+//
+
+function slugify(text)
+{
+  return text.toString().toLowerCase()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+    .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+    .replace(/^-+/, '')             // Trim - from start of text
+    .replace(/-+$/, '');            // Trim - from end of text
+}
+
 
 //
 // DATA
 //
+
+function install (cb) {
+    configDB.info().then(function (res) {
+        // if empty
+        if (res.doc_count === 0) {
+            var insert = [];
+            for (let k of Config.keys()) {
+                insert.push({
+                    _id: k,
+                    val: Config[k],
+                });
+            }
+            configDB.bulkDocs(insert, {}, function (err, res) {
+                configDB.compact();
+                cb(err, res);
+            });
+        }
+    }).catch(function (err) {
+      console.error('install', err);
+    });
+}
+function getConfigValue (key, cb) {
+    configDB.get(key).then(function (doc) {
+        cb(null, doc.val);
+    }).catch(function (err) {
+        cb(err);
+    });
+}
+function setConfigValue (key, val, cb) {
+    configDB.put({
+        _id: key,
+        val: val
+    }).then(function (doc) {
+        cb(null, doc.val);
+    }).catch(function (err) {
+        cb(err);
+    });
+}
 
 function fetchData () {
 	user.fetching = true;
@@ -194,12 +258,26 @@ function onLogin (access_token) {
 	});
 
 	ecs = new AWS.ECS();
+    s3 = new AWS.S3();
 
 	fetchData();
 
 	// setTimeout(function () {
 	// 	fetchData();
 	// }, 1000 * 15); // 15 sec
+}
+
+function registerAccount (bucketName, accountName, clientId, identityPoolId, cb) {
+    var params = {
+        Bucket: bucketName,
+        ACL: 'public-read',
+        Key: slugify(accountName),
+        Body: JSON.stringify({
+            clientId: clientId,
+            identityPoolId: identityPoolId
+        })
+    };
+    s3.putObject(params, cb);
 }
 
 
@@ -221,7 +299,7 @@ function retrieveProfile (access_token) {
 	});
 }
 window.onAmazonLoginReady = function(cb) {
-    $.get(Config.hostname + '/accounts/' + Config.account + '.json', function getResponse(res) {
+    $.get(Config.hostname + '/accounts/' + slugify(Config.account) + '.json', function getResponse(res) {
         // console.debug('res', res)
         Config.identityPoolId = res.identityPoolId;
         Config.clientId = res.clientId;
@@ -515,44 +593,20 @@ var LoggedOutComponent = React.createClass({
     }
 });
 
-var UserComponent = React.createClass({
+var TaskDefinitionSectionComponent = React.createClass({
 
   getInitialState: function () {
     return {
-    	registerTaskModal: false,
-    	registerTaskText: ''
+        registerTaskModal: false,
+        registerTaskText: ''
     };
   },
 
   componentDidMount: function () {
-	let self = this;
-	(new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
-		self.forceUpdate();
-	});
-  },
-
-  loginClick: function () {
-  	console.debug('log in');
-	let options = { scope : 'profile' };
-	amazon.Login.authorize(options,  function(response) {
-		if (response.error) {
-			console.error(response.error);
-			return;
-		}
-		localStorage.setItem('amazon_oauth_access_token', response.access_token);
-		retrieveProfile(response.access_token);
-	});
-  },
-
-  createCluster: function () {
-  	var clusterName = prompt('The name of your cluster. If you do not specify a name for your cluster, you will create a cluster named default.');
-  	ecs.createCluster({
-  		clusterName: clusterName
-  	}, function (err, data) {
-		if (!err && confirm('Cluster created. Refresh the page?')) {
-			window.location.reload();
-		}
-  	});
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.families)).open(function(added) {
+        self.forceUpdate();
+    });
   },
 
   registerTaskTextChange: function(event) {
@@ -560,75 +614,154 @@ var UserComponent = React.createClass({
   },
 
   registerTaskDefinition: function () {
-  	var params = JSON.parse(this.state.registerTaskText);
-  	if (!params) {
-  		alert('Bad JSON. Try again.');
-  		return;
-  	}
-  	ecs.registerTaskDefinition(params, function (err, data) {
-  		if (err) {
-  			console.error(err);
-  			alert(err);
-  		}
-		if (!err && confirm('Task registered. Refresh the page?')) {
-			window.location.reload();
-		}
-  	});
+    var params = JSON.parse(this.state.registerTaskText);
+    if (!params) {
+        alert('Bad JSON. Try again.');
+        return;
+    }
+    ecs.registerTaskDefinition(params, function (err, data) {
+        if (err) {
+            console.error(err);
+            alert(err);
+        }
+        if (!err && confirm('Task registered. Refresh the page?')) {
+            window.location.reload();
+        }
+    });
   },
 
   toggleRegisterTaskModal: function () {
-	this.setState({registerTaskModal: !this.state.registerTaskModal});
-	return false;
+    this.setState({registerTaskModal: !this.state.registerTaskModal});
+    return false;
   },
 
   closeRegisterTaskModal: function () {
-  	this.setState({registerTaskModal: false});
-	return false;
+    this.setState({registerTaskModal: false});
+    return false;
+  },
+
+    render: function () {
+        // console.debug('user.families', this.props.families);
+        var families = [];
+        if (this.props.families) {
+            families = this.props.families.map(function (family) {
+                return <FamilyComponent family={family}></FamilyComponent>
+            });
+        }
+        var registerTaskText = this.state.registerTaskText;
+        return (
+            <section>
+                <h2>Task Definitions</h2>
+                { families }
+
+                <p><a href="#" onClick={this.toggleRegisterTaskModal}>Register Task Definition ▼</a></p>
+                { this.state.registerTaskModal ? <div>
+                    <h3>Register a Task</h3>
+                    <textarea rows="20" cols="120" value={registerTaskText} onChange={this.registerTaskTextChange}></textarea>
+                    <p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> | <button onClick={this.registerTaskDefinition}>Register Task</button></p>
+                </div> : null }
+            </section>
+        );
+    }
+});
+
+var ClusterSectionComponent = React.createClass({
+
+  componentDidMount: function () {
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.clusters)).open(function(added) {
+        self.forceUpdate();
+    });
+  },
+
+  createCluster: function () {
+    var clusterName = prompt('The name of your cluster. If you do not specify a name for your cluster, you will create a cluster named default.');
+    ecs.createCluster({
+        clusterName: clusterName
+    }, function (err, data) {
+        if (!err && confirm('Cluster created. Refresh the page?')) {
+            window.location.reload();
+        }
+    });
+  },
+
+    render: function () {
+        // console.debug('user.clusters', this.props.clusters);
+        var clusters = [];
+        if (this.props.clusters) {
+            clusters = this.props.clusters.map(function (cluster) {
+                return <ClusterComponent cluster={cluster}></ClusterComponent>
+            });
+        }
+        return (
+            <section>
+                <h2>Clusters</h2>
+                { clusters }
+                <p><a href="#" onClick={this.createCluster}>Create Cluster</a></p>
+            </section>
+        );
+    }
+});
+
+var HeaderComponent = React.createClass({
+
+  componentDidMount: function () {
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.user)).open(function(added) {
+        if (added.profile) self.forceUpdate();
+    });
+  },
+
+  logoutClick: function () {
+    console.debug('log out');
+    amazon.Login.logout();
+    user = {};
+    localStorage.removeItem('amazon_oauth_access_token');
+  },
+
+    render: function () {
+        return (
+            <header>
+                <p><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></p>
+                { this.props.user.fetching ? <p>Loading...</p> : null }
+                <h1>User: {this.props.user.profile.Name}</h1>
+            </header>
+        );
+    }
+});
+
+var FooterComponent = React.createClass({
+    render: function () {
+        return (
+            <footer>&copy; 2015 Paul Thrasher</footer>
+        );
+    }
+});
+
+var LoggedInComponent = React.createClass({
+
+  componentDidMount: function () {
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
+        self.forceUpdate();
+    });
   },
 
   render: function() {
-  	console.debug('user.props', this.props.user);
-
-	var clusters = [];
-	if (this.props.user.profile && this.props.user.clusters) {
-		clusters = this.props.user.clusters.map(function (cluster) {
-			return <ClusterComponent cluster={cluster}></ClusterComponent>
-		});
-	}
-
-	var families = [];
-	if (this.props.user.profile && this.props.user.families) {
-		families = this.props.user.families.map(function (family) {
-			return <FamilyComponent family={family}></FamilyComponent>
-		});
-	}
-
-    var registerTaskText = this.state.registerTaskText;
+    console.debug('user.props', this.props.user);
     return (
-    	<div className="user">
-			<div>
-	    		<p><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></p>
-                { this.props.user.fetching ? <p>Loading...</p> : null }
-			</div>
+        <div className="user">
+            <HeaderComponent user={this.props.user} />
 
-	    	<h1>User: {this.props.user.profile.Name}</h1>
+            <hr />
 
-	    	<hr />
+            { this.props.user.clusters ? <ClusterSectionComponent clusters={this.props.user.clusters} /> : null }
 
-	    	<h2>Clusters</h2>
-	    	{ clusters }
-	    	<p><a href="#" onClick={this.createCluster}>Create Cluster</a></p>
+            <hr />
 
-	    	<hr />
+            { this.props.user.families ? <TaskDefinitionSectionComponent families={this.props.user.families} /> : null }
 
-	    	<h2>Task Definitions</h2>
-	    	{ families }
-			<p><a href="#" onClick={this.toggleRegisterTaskModal}>Register Task Definition</a> ▼</p>
-			{ this.state.registerTaskModal ? <div>
-				<h3>Register a Task</h3>
-				<textarea rows="20" cols="120" value={registerTaskText} onChange={this.registerTaskTextChange}></textarea>
-				<p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> | <button onClick={this.registerTaskDefinition}>Register Task</button></p>
-			</div> : null }
+            <FooterComponent />
         </div>
     );
   }
@@ -646,7 +779,7 @@ var PageComponent = React.createClass({
     render: function () {
         return (
             <div className="page">
-                { this.props.user.profile ? <UserComponent user={this.props.user} /> : <LoggedOutComponent /> }
+                { this.props.user.profile ? <LoggedInComponent user={this.props.user} /> : <LoggedOutComponent /> }
             </div>
         );
     }
