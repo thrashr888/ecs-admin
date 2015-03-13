@@ -71,7 +71,7 @@ function slugify(text)
 // DATA
 //
 
-function install (cb) {
+window.ecsAdminInstall = function (cb) {
     configDB.info().then(function (res) {
         // if empty
         if (res.doc_count === 0) {

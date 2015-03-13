@@ -54,29 +54,33 @@ gulp.task('scripts', function () {
     // affects the compilation of aws-sdk-js
     process.env.AWS_SERVICES = 'ecs,ec2,s3,cognitoidentity';
 
-    return gulp.src(['scripts/main.jsx'], { read: false })
-        .pipe($.browserify({
-            transform: [
-                // ['babelify', {'experimental': true}],
-                // ['babelify'],
-                require('babelify').configure({
-                  experimental: true
-                }),
-                ['reactify', {es6: true}],
-                ['envify', {BUILD_ENV: process.env.BUILD_ENV}]
-            ],
-            insertGlobals : true,
-            extensions: ['.jsx'],
-            harmony: true,
-            debug: !(process.env.BUILD_ENV === 'production')
-        }))
-        .pipe($.rename(function (path) {
-            path.extname = '.js';
-        }))
-        // .pipe($.jshint('.jshintrc')) // too slow
-        // .pipe($.jshint.reporter('default'))
-        .pipe(gulp.dest('dist/scripts'))
-        .pipe($.size());
+    try {
+        return gulp.src(['scripts/main.jsx'], { read: false })
+            .pipe($.browserify({
+                transform: [
+                    // ['babelify', {'experimental': true}],
+                    // ['babelify'],
+                    require('babelify').configure({
+                      experimental: true
+                    }),
+                    ['reactify', {es6: true}],
+                    ['envify', {BUILD_ENV: process.env.BUILD_ENV}]
+                ],
+                insertGlobals : true,
+                extensions: ['.jsx'],
+                harmony: true,
+                debug: !(process.env.BUILD_ENV === 'production')
+            }))
+            .pipe($.rename(function (path) {
+                path.extname = '.js';
+            }))
+            // .pipe($.jshint('.jshintrc')) // too slow
+            // .pipe($.jshint.reporter('default'))
+            .pipe(gulp.dest('dist/scripts'))
+            .pipe($.size());
+    } catch (e) {
+        console.error(e);
+    }
 });
 
 
