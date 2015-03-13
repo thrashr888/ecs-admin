@@ -122,7 +122,8 @@ function fetchData () {
 		user.families.forEach(function (family, i) {
 			var familyName = family;
 			user.families[i] = {
-				name: familyName
+                name: familyName,
+                familyName: familyName
 			};
 
 			if (user.families) {
@@ -140,7 +141,8 @@ function fetchData () {
 					user.families[i].taskDefinitionArns.forEach(function (taskDefinition, i2) {
 						var taskDefinitionName = taskDefinition;
 						user.families[i].taskDefinitionArns[i2] = {
-							name: taskDefinitionName
+							name: taskDefinitionName,
+                            taskDefinitionName: taskDefinitionName
 						};
 
 						user.fetching = true;
@@ -326,7 +328,7 @@ var ContainerInstanceComponent = React.createClass({
   },
 
   render: function() {
-  	console.debug('containerInstance.props', this.props)
+  	// console.debug('containerInstance.props', this.props)
   	var remainingResources = this.props.containerInstance.remainingResources.map(function (res) {
   		return <p>{res.name}: {res.integerValue || res.doubleValue || res.longValue || res.stringSetValue.join(', ') }</p>
   	});
@@ -385,7 +387,7 @@ var TaskComponent = React.createClass({
   },
 
   render: function() {
-  	console.debug('task.props', this.props.task);
+  	// console.debug('task.props', this.props.task);
     return (
         <div className="task">
         	<h3>Task</h3>
@@ -413,11 +415,11 @@ var FamilyComponent = React.createClass({
 	},
 
 	render: function() {
-		console.debug('family.props', this.props.family);
+		// console.debug('family.props', this.props.family);
 		var self = this, taskDefinitions = [];
 		if (this.props.family && this.props.family.taskDefinitionArns) {
 			taskDefinitions = this.props.family.taskDefinitionArns.map(function (taskDefinitionArn) {
-				console.log('taskDefinitionArn.taskDefinition', taskDefinitionArn)
+				// console.log('taskDefinitionArn.taskDefinition', taskDefinitionArn)
 				if (taskDefinitionArn.taskDefinition) {
 					return <TaskDefinitionComponent taskDefinition={taskDefinitionArn.taskDefinition}></TaskDefinitionComponent>
 				} else {
@@ -429,6 +431,7 @@ var FamilyComponent = React.createClass({
 		}
 		return (
 			<div>
+                <a name={'f-' + this.props.family.familyName} />
 				<h2>Family: {this.props.family.name}</h2>
 				{ taskDefinitions }
 			</div>
@@ -445,7 +448,7 @@ var ContainerDefinitionComponent = React.createClass({
 	},
 
 	render: function() {
-	  	console.debug('containerDefinition.props', this.props.containerDefinition);
+	  	// console.debug('containerDefinition.props', this.props.containerDefinition);
 		return (
 			<ul>
 				<li>CPU: {this.props.containerDefinition.cpu}</li>
@@ -472,8 +475,7 @@ var TaskDefinitionComponent = React.createClass({
 	},
 
 	render: function() {
-	  	console.debug('taskDefinition.props', this.props.taskDefinition);
-
+	  	// console.debug('taskDefinition.props', this.props.taskDefinition);
 		var containerDefinitions = [];
 		if (this.props.taskDefinition.containerDefinitions) {
 			this.props.taskDefinition.containerDefinitions.map(function (containerDefinition) {
@@ -507,7 +509,7 @@ var ClusterComponent = React.createClass({
   deleteCluster: function () {
   	if (confirm('Deleting cluster ' + this.props.cluster.clusterName + '. Are you sure?')) {
 	  	ecs.deleteCluster({
-	  		clusterName: this.props.cluster.clusterName
+	  		cluster: this.props.cluster.clusterName
 	  	}, function (err, data) {
 	  		if (err) {
 	  			console.error(err);
@@ -521,9 +523,8 @@ var ClusterComponent = React.createClass({
   },
 
   render: function () {
-  	console.debug('cluster.props', this.props.cluster);
+  	// console.debug('cluster.props', this.props.cluster);
   	var self = this, tasks = [];
-	// console.log('tasks', this.props.cluster)
 
   	if (this.props.cluster && this.props.cluster.tasks) {
   	  	tasks = this.props.cluster.tasks.map(function (task) {
@@ -540,57 +541,17 @@ var ClusterComponent = React.createClass({
 
     return (
     	<div className="cluster">
+            <a name={'c-' + this.props.cluster.clusterName} />
 			<h2>Cluster: { this.props.cluster.clusterName } { this.props.cluster.status }</h2>
-			{ tasks }
-			{ containerInstances }
+
+            <section>{ tasks }</section>
+
+            <section>{ containerInstances }</section>
+
 			<a href="#" onClick={this.deleteCluster}>Delete cluster</a>
 		</div>
     );
   }
-});
-
-var LoggedOutComponent = React.createClass({
-
-  getInitialState: function () {
-    return {
-        account: Config.account,
-    };
-  },
-
-  updateAccount: function (event) {
-    Config.account = event.target.value;
-    this.setState({account: Config.account});
-    localStorage.setItem('account', Config.account);
-  },
-
-  loginClick: function () {
-    console.debug('log in');
-    let options = { scope : 'profile' };
-    window.onAmazonLoginReady();
-    amazon.Login.authorize(options,  function(response) {
-        if (response.error) {
-            console.error(response.error);
-            return;
-        }
-        localStorage.setItem('amazon_oauth_access_token', response.access_token);
-        retrieveProfile(response.access_token);
-    });
-  },
-
-    render: function () {
-        var account = this.state.account;
-        return (
-            <div className="loggedOut">
-                <p><input value={account} onChange={this.updateAccount} /></p>
-
-                <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
-                  <img border="0" alt="Login with Amazon"
-                    src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
-                    width="156" height="32" />
-                </a>
-            </div>
-        );
-    }
 });
 
 var TaskDefinitionSectionComponent = React.createClass({
@@ -642,17 +603,13 @@ var TaskDefinitionSectionComponent = React.createClass({
 
     render: function () {
         // console.debug('user.families', this.props.families);
-        var families = [];
-        if (this.props.families) {
-            families = this.props.families.map(function (family) {
-                return <FamilyComponent family={family}></FamilyComponent>
-            });
-        }
+        var families = this.props.families.map(function (family) {
+            return <FamilyComponent family={family}></FamilyComponent>
+        });
         var registerTaskText = this.state.registerTaskText;
         return (
             <section>
                 <h2>Task Definitions</h2>
-                { families }
 
                 <p><a href="#" onClick={this.toggleRegisterTaskModal}>Register Task Definition ▼</a></p>
                 { this.state.registerTaskModal ? <div>
@@ -660,6 +617,11 @@ var TaskDefinitionSectionComponent = React.createClass({
                     <textarea rows="20" cols="120" value={registerTaskText} onChange={this.registerTaskTextChange}></textarea>
                     <p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> | <button onClick={this.registerTaskDefinition}>Register Task</button></p>
                 </div> : null }
+
+                <nav>{ this.props.families.map((family) => <li><a href={'#f-' + family.name}>{family.name}</a></li>) }</nav>
+
+                { families }
+                <a href="#">top</a>
             </section>
         );
     }
@@ -687,17 +649,18 @@ var ClusterSectionComponent = React.createClass({
 
     render: function () {
         // console.debug('user.clusters', this.props.clusters);
-        var clusters = [];
-        if (this.props.clusters) {
-            clusters = this.props.clusters.map(function (cluster) {
-                return <ClusterComponent cluster={cluster}></ClusterComponent>
-            });
-        }
+        var clusters = this.props.clusters.map(function (cluster) {
+            return <ClusterComponent cluster={cluster}></ClusterComponent>
+        });
         return (
             <section>
                 <h2>Clusters</h2>
+                <p><button onClick={this.createCluster}>Create Cluster</button></p>
+
+                <nav>{ this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>) }</nav>
+
                 { clusters }
-                <p><a href="#" onClick={this.createCluster}>Create Cluster</a></p>
+                <a href="#">top</a>
             </section>
         );
     }
@@ -740,11 +703,26 @@ var FooterComponent = React.createClass({
 
 var LoggedInComponent = React.createClass({
 
+  getInitialState: function () {
+    return {
+        nav: 'clusters'
+    };
+  },
+
   componentDidMount: function () {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
         self.forceUpdate();
     });
+  },
+
+  navClick: function (name) {
+    var self = this;
+    return function (event) {
+        self.setState({
+            nav: name
+        });
+    }
   },
 
   render: function() {
@@ -753,18 +731,65 @@ var LoggedInComponent = React.createClass({
         <div className="user">
             <HeaderComponent user={this.props.user} />
 
-            <hr />
+            <nav>
+                <ul>
+                    <li><a href="#" onClick={this.navClick('clusters')}>Clusters</a></li>
+                    <li><a href="#" onClick={this.navClick('tasks')}>Tasks</a></li>
+                </ul>
+            </nav>
 
-            { this.props.user.clusters ? <ClusterSectionComponent clusters={this.props.user.clusters} /> : null }
+            { this.props.user.clusters && this.state.nav === 'clusters' ? <ClusterSectionComponent clusters={this.props.user.clusters} /> : null }
 
-            <hr />
-
-            { this.props.user.families ? <TaskDefinitionSectionComponent families={this.props.user.families} /> : null }
+            { this.props.user.families && this.state.nav === 'tasks' ? <TaskDefinitionSectionComponent families={this.props.user.families} /> : null }
 
             <FooterComponent />
         </div>
     );
   }
+});
+
+var LoggedOutComponent = React.createClass({
+
+  getInitialState: function () {
+    return {
+        account: Config.account,
+    };
+  },
+
+  updateAccount: function (event) {
+    Config.account = event.target.value;
+    this.setState({account: Config.account});
+    localStorage.setItem('account', Config.account);
+  },
+
+  loginClick: function () {
+    console.debug('log in');
+    let options = { scope : 'profile' };
+    window.onAmazonLoginReady();
+    amazon.Login.authorize(options,  function(response) {
+        if (response.error) {
+            console.error(response.error);
+            return;
+        }
+        localStorage.setItem('amazon_oauth_access_token', response.access_token);
+        retrieveProfile(response.access_token);
+    });
+  },
+
+    render: function () {
+        var account = this.state.account;
+        return (
+            <div className="loggedOut">
+                <p><input value={account} onChange={this.updateAccount} /></p>
+
+                <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
+                  <img border="0" alt="Login with Amazon"
+                    src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
+                    width="156" height="32" />
+                </a>
+            </div>
+        );
+    }
 });
 
 var PageComponent = React.createClass({
