@@ -319,15 +319,16 @@ window.onAmazonLoginReady = function(cb) {
 // APP
 //
 
-var ContainerInstanceComponent = React.createClass({
-  componentDidMount: function () {
+class ContainerInstanceComponent extends React.Component {
+
+  componentDidMount() {
 	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.containerInstance)).open(function(changes) {
 		self.forceUpdate();
 	});
-  },
+  }
 
-  render: function() {
+  render() {
   	// console.debug('containerInstance.props', this.props)
   	var remainingResources = this.props.containerInstance.remainingResources.map(function (res) {
   		return <li><b>{res.name}:</b> {res.integerValue || res.doubleValue || res.longValue || res.stringSetValue.join(', ') }</li>
@@ -350,17 +351,24 @@ var ContainerInstanceComponent = React.createClass({
         </div>
     );
   }
-});
+};
 
-var TaskComponent = React.createClass({
-  componentDidMount: function () {
+class TaskComponent extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.runTask = this.runTask.bind(this);
+    this.stopTask = this.stopTask.bind(this);
+  }
+
+  componentDidMount() {
 	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.task)).open(function(changes) {
 		self.forceUpdate();
 	});
-  },
+  }
 
-  stopTask: function () {
+  stopTask() {
   	if (confirm('Are you sure?')) {
 	  	ecs.stopTask({
 	  		task: this.props.task.taskDefinitionArn,
@@ -371,9 +379,9 @@ var TaskComponent = React.createClass({
 			}
 	  	});
   	}
-  },
+  }
 
-  runTask: function () {
+  runTask() {
   	var count = prompt('The number of instances of the specified task that you would like to place on your cluster.');
   	ecs.runTask({
   		task: this.props.task.taskDefinitionArn,
@@ -384,9 +392,9 @@ var TaskComponent = React.createClass({
 			window.location.reload();
 		}
   	});
-  },
+  }
 
-  render: function() {
+  render() {
   	// console.debug('task.props', this.props.task);
     return (
         <div className="task">
@@ -404,17 +412,18 @@ var TaskComponent = React.createClass({
         </div>
     );
   }
-});
+};
 
-var FamilyComponent = React.createClass({
-	componentDidMount: function () {
+class FamilyComponent extends React.Component {
+
+	componentDidMount() {
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.family)).open(function(changes) {
 			self.forceUpdate();
 		});
-	},
+	}
 
-	render: function() {
+	render() {
 		// console.debug('family.props', this.props.family);
 		var self = this, taskDefinitions = [];
 		if (this.props.family && this.props.family.taskDefinitionArns) {
@@ -437,17 +446,18 @@ var FamilyComponent = React.createClass({
 			</div>
 		);
 	}
-});
+};
 
-var ContainerDefinitionComponent = React.createClass({
-	componentDidMount: function () {
+class ContainerDefinitionComponent extends React.Component {
+
+	componentDidMount() {
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.containerDefinition)).open(function(changes) {
 			self.forceUpdate();
 		});
-	},
+	}
 
-	render: function() {
+	render() {
 	  	// console.debug('containerDefinition.props', this.props.containerDefinition);
 		return (
 			<ul>
@@ -464,17 +474,18 @@ var ContainerDefinitionComponent = React.createClass({
 			</ul>
 		);
 	}
-});
+};
 
-var TaskDefinitionComponent = React.createClass({
-	componentDidMount: function () {
+class TaskDefinitionComponent extends React.Component {
+
+	componentDidMount() {
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.taskDefinition)).open(function(changes) {
 			self.forceUpdate();
 		});
-	},
+	}
 
-	render: function() {
+	render() {
 	  	// console.debug('taskDefinition.props', this.props.taskDefinition);
 		var containerDefinitions = [];
 		if (this.props.taskDefinition.containerDefinitions) {
@@ -496,17 +507,23 @@ var TaskDefinitionComponent = React.createClass({
 			</div>
 		);
 	}
-});
+};
 
-var ClusterComponent = React.createClass({
-  componentDidMount: function () {
+class ClusterComponent extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.deleteCluster = this.deleteCluster.bind(this);
+  }
+
+  componentDidMount() {
 	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.cluster)).open(function(changes) {
 		self.forceUpdate();
 	});
-  },
+  }
 
-  deleteCluster: function () {
+  deleteCluster() {
   	if (confirm('Deleting cluster ' + this.props.cluster.clusterName + '. Are you sure?')) {
 	  	ecs.deleteCluster({
 	  		cluster: this.props.cluster.clusterName
@@ -520,9 +537,9 @@ var ClusterComponent = React.createClass({
 			}
 	  	});
   	}
-  },
+  }
 
-  render: function () {
+  render() {
   	// console.debug('cluster.props', this.props.cluster);
   	var self = this, tasks = [];
 
@@ -552,29 +569,34 @@ var ClusterComponent = React.createClass({
 		</div>
     );
   }
-});
+};
 
-var TaskDefinitionSectionComponent = React.createClass({
+class TaskDefinitionSectionComponent extends React.Component {
 
-  getInitialState: function () {
-    return {
+  constructor(props) {
+    super(props);
+    this.state = {
         registerTaskModal: false,
-        registerTaskText: ''
+        registerTaskText: null
     };
-  },
+    this.registerTaskTextChange = this.registerTaskTextChange.bind(this);
+    this.registerTaskDefinition = this.registerTaskDefinition.bind(this);
+    this.toggleRegisterTaskModal = this.toggleRegisterTaskModal.bind(this);
+    this.closeRegisterTaskModal = this.closeRegisterTaskModal.bind(this);
+  }
 
-  componentDidMount: function () {
+  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.families)).open(function(added) {
         self.forceUpdate();
     });
-  },
+  }
 
-  registerTaskTextChange: function(event) {
+  registerTaskTextChange(event) {
     this.setState({registerTaskText: event.target.value});
-  },
+  }
 
-  registerTaskDefinition: function () {
+  registerTaskDefinition() {
     var params = JSON.parse(this.state.registerTaskText);
     if (!params) {
         alert('Bad JSON. Try again.');
@@ -589,19 +611,19 @@ var TaskDefinitionSectionComponent = React.createClass({
             window.location.reload();
         }
     });
-  },
+  }
 
-  toggleRegisterTaskModal: function () {
+  toggleRegisterTaskModal(event) {
     this.setState({registerTaskModal: !this.state.registerTaskModal});
-    return false;
-  },
+    event.preventDefault();
+  }
 
-  closeRegisterTaskModal: function () {
+  closeRegisterTaskModal(event) {
     this.setState({registerTaskModal: false});
-    return false;
-  },
+    event.preventDefault();
+  }
 
-    render: function () {
+    render() {
         // console.debug('user.families', this.props.families);
         var families = this.props.families.map(function (family) {
             return <FamilyComponent family={family}></FamilyComponent>
@@ -625,18 +647,23 @@ var TaskDefinitionSectionComponent = React.createClass({
             </section>
         );
     }
-});
+};
 
-var ClusterSectionComponent = React.createClass({
+class ClusterSectionComponent extends React.Component {
 
-  componentDidMount: function () {
+  constructor(props) {
+    super(props);
+    this.createCluster = this.createCluster.bind(this);
+  }
+
+  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.clusters)).open(function(added) {
         self.forceUpdate();
     });
-  },
+  }
 
-  createCluster: function () {
+  createCluster() {
     var clusterName = prompt('The name of your cluster. If you do not specify a name for your cluster, you will create a cluster named default.');
     ecs.createCluster({
         clusterName: clusterName
@@ -645,9 +672,9 @@ var ClusterSectionComponent = React.createClass({
             window.location.reload();
         }
     });
-  },
+  }
 
-    render: function () {
+    render() {
         // console.debug('user.clusters', this.props.clusters);
         var clusters = this.props.clusters.map(function (cluster) {
             return <ClusterComponent cluster={cluster}></ClusterComponent>
@@ -664,25 +691,30 @@ var ClusterSectionComponent = React.createClass({
             </section>
         );
     }
-});
+};
 
-var HeaderComponent = React.createClass({
+class HeaderComponent extends React.Component {
 
-  componentDidMount: function () {
+  constructor(props) {
+    super(props);
+    this.logoutClick = this.logoutClick.bind(this);
+  }
+
+  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(added) {
         if (added.profile) self.forceUpdate();
     });
-  },
+  }
 
-  logoutClick: function () {
+  logoutClick() {
     console.debug('log out');
     amazon.Login.logout();
     user = {};
     localStorage.removeItem('amazon_oauth_access_token');
-  },
+  }
 
-    render: function () {
+    render() {
         return (
             <header>
                 <p><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></p>
@@ -691,41 +723,45 @@ var HeaderComponent = React.createClass({
             </header>
         );
     }
-});
+};
 
-var FooterComponent = React.createClass({
-    render: function () {
+class FooterComponent extends React.Component {
+
+    render() {
         return (
             <footer>&copy; 2015 Paul Thrasher</footer>
         );
     }
-});
+};
 
-var LoggedInComponent = React.createClass({
+class LoggedInComponent extends React.Component {
 
-  getInitialState: function () {
-    return {
-        nav: 'clusters'
+  constructor(props) {
+    super(props);
+    this.state = {
+        nav: 'clusters',
+        user: props.user,
     };
-  },
+    this.navClick = this.navClick.bind(this);
+  }
 
-  componentDidMount: function () {
+  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
         self.forceUpdate();
     });
-  },
+  }
 
-  navClick: function (name) {
+  navClick(name) {
     var self = this;
     return function (event) {
         self.setState({
             nav: name
         });
     }
-  },
+  }
 
-  render: function() {
+  render() {
     console.debug('user.props', this.props.user);
     return (
         <div className="user">
@@ -746,21 +782,22 @@ var LoggedInComponent = React.createClass({
         </div>
     );
   }
-});
+};
 
-var RegisterComponent = React.createClass({
+class RegisterComponent extends React.Component {
 
-      getInitialState: function () {
-        return {
-            hostname: Config.hostname,
-            bucketName: Config.bucketName,
-            accountName: Config.accountName,
-            clientId: null,
-            identityPoolId: null,
-        };
-      },
+  constructor(props) {
+    super(props);
+    this.state = {
+        hostname: Config.hostname,
+        bucketName: Config.bucketName,
+        accountName: Config.accountName,
+        clientId: null,
+        identityPoolId: null,
+    };
+  }
 
-    register: function () {
+    register() {
         var hostname = this.state.hostname;
         var bucketName = this.state.bucketName;
         var accountName = this.state.accountName;
@@ -770,46 +807,59 @@ var RegisterComponent = React.createClass({
         registerAccount(bucketName, accountName, clientId, identityPoolId, function (err, res) {
             this.state.message = res;
         });
-    },
+    }
 
-    render: function () {
+    submitHandler(event) {
+        this.state[event.target.name] = event.target.value;
+    }
+
+    changeHandler(event) {
+        console.log('changehandler', event)
+    }
+
+    render() {
         return (
             <section>
                 <h2>Register</h2>
 
                 { this.state.message ? <div>{this.state.message}</div> : null }
 
-                <form onChange={this.onFormChange} onSubmit={this.onFormSubmit}>
+                <form onChange={this.onFormChange} onSubmit={this.submitHandler}>
                     <p><label>Account Name:</label><br />
-                        <input type="text" name="accountName" value={this.state.accountName} /></p>
+                        <input type="text" name="accountName" value={this.state.accountName} onChange={this.changeHandler} /></p>
                     <p><label>Client Id:</label><br />
-                        <input type="text" name="clientId" value={this.state.clientId} /></p>
+                        <input type="text" name="clientId" value={this.state.clientId} onChange={this.changeHandler} /></p>
                     <p><label>Identity Pool Id:</label><br />
-                        <input type="text" name="identityPoolId" value={this.state.identityPoolId} /></p>
+                        <input type="text" name="identityPoolId" value={this.state.identityPoolId} onChange={this.changeHandler} /></p>
 
                     <p><a href="#" onClick={this.props.onCancel}>cancel</a> <input type="submit" /></p>
                 </form>
             </section>
         );
     }
-});
+};
 
-var LoggedOutComponent = React.createClass({
+class LoggedOutComponent extends React.Component {
 
-  getInitialState: function () {
-    return {
+  constructor(props) {
+    super(props);
+    this.state = {
         account: Config.accountName,
         showRegistration: false,
     };
-  },
+    this.updateAccount = this.updateAccount.bind(this);
+    this.loginClick = this.loginClick.bind(this);
+    this.showRegistrationModal = this.showRegistrationModal.bind(this);
+    this.hideRegistrationModal = this.hideRegistrationModal.bind(this);
+  }
 
-  updateAccount: function (event) {
+  updateAccount(event) {
     Config.accountName = event.target.value;
     this.setState({account: Config.accountName});
     localStorage.setItem('accountName', Config.accountName);
-  },
+  }
 
-  loginClick: function () {
+  loginClick() {
     console.debug('log in');
     let options = { scope : 'profile' };
     window.onAmazonLoginReady();
@@ -821,19 +871,19 @@ var LoggedOutComponent = React.createClass({
         localStorage.setItem('amazon_oauth_access_token', response.access_token);
         retrieveProfile(response.access_token);
     });
-  },
+  }
 
-  showRegistrationModal: function (event) {
+  showRegistrationModal(event) {
     this.setState({ showRegistration: true });
-    return false;
-  },
+    event.preventDefault();
+  }
 
-  hideRegistrationModal: function (event) {
+  hideRegistrationModal(event) {
     this.setState({ showRegistration: false });
-    return false;
-  },
+    event.preventDefault();
+  }
 
-    render: function () {
+    render() {
         var account = this.state.account;
         return (
             <div className="loggedOut">
@@ -851,25 +901,25 @@ var LoggedOutComponent = React.createClass({
             </div>
         );
     }
-});
+};
 
-var PageComponent = React.createClass({
+class PageComponent extends React.Component {
 
-  componentDidMount: function () {
+  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(added, removed, changed, getOldValueFn) {
         if (added.profile) self.forceUpdate();
     });
-  },
+  }
 
-    render: function () {
+    render() {
         return (
             <div className="page">
                 { this.props.user.profile ? <LoggedInComponent user={this.props.user} /> : <LoggedOutComponent /> }
             </div>
         );
     }
-});
+};
 
 React.render(
 	<PageComponent user={user}></PageComponent>,
