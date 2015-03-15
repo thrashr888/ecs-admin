@@ -17,9 +17,9 @@ var Config = {
     env: process.env.BUILD_ENV,
     // hostname: '', // local
     // hostname: 'http://thrashr888-ecs-admin.s3-website-us-east-1.amazonaws.com',
-    bucketName: 'thrashr888-ecs-admin',
     hostname: 'https://d3csuswr8p8yjt.cloudfront.net',
-    account: localStorage.getItem('account') || 'testaccount',
+    bucketName: 'thrashr888-ecs-admin',
+    accountName: localStorage.getItem('accountName') || 'testaccount',
     region: 'us-east-1',
     identityPoolId: null,
     clientId: null,
@@ -301,7 +301,7 @@ function retrieveProfile (access_token) {
 	});
 }
 window.onAmazonLoginReady = function(cb) {
-    $.get(Config.hostname + '/accounts/' + slugify(Config.account) + '.json', function getResponse(res) {
+    $.get(Config.hostname + '/accounts/' + slugify(Config.accountName) + '.json', function getResponse(res) {
         // console.debug('res', res)
         Config.identityPoolId = res.identityPoolId;
         Config.clientId = res.clientId;
@@ -330,22 +330,22 @@ var ContainerInstanceComponent = React.createClass({
   render: function() {
   	// console.debug('containerInstance.props', this.props)
   	var remainingResources = this.props.containerInstance.remainingResources.map(function (res) {
-  		return <p>{res.name}: {res.integerValue || res.doubleValue || res.longValue || res.stringSetValue.join(', ') }</p>
+  		return <li><b>{res.name}:</b> {res.integerValue || res.doubleValue || res.longValue || res.stringSetValue.join(', ') }</li>
   	});
   	var registeredResources = this.props.containerInstance.registeredResources.map(function (res) {
-  		return <p>{res.name}: {res.integerValue || res.doubleValue || res.longValue || res.stringSetValue.join(', ') }</p>
+  		return <li><b>{res.name}:</b> {res.integerValue || res.doubleValue || res.longValue || res.stringSetValue.join(', ') }</li>
   	});
     return (
         <div className="container-instance">
-        	<h3>ContainerInstance</h3>
+            <h3>Container Instance {this.props.containerInstance.containerInstanceArn.replace(/(.*\/)[0-9A-Z\-]+/, '')}</h3>
         	<ul>
-        		<li>Container Instance: {this.props.containerInstance.containerInstanceArn}</li>
+        		<li>Arn: {this.props.containerInstance.containerInstanceArn}</li>
         		<li>Agent Connected: {this.props.containerInstance.agentConnected ? 'yes' : 'no'}</li>
         		<li>EC2 Instance Id: {this.props.containerInstance.ec2InstanceId}</li>
         		<li>Status: {this.props.containerInstance.status}</li>
 
-        		<li>Registered: {registeredResources}</li>
-        		<li>Remaining: {remainingResources}</li>
+        		<li>Registered: <ul>{registeredResources}</ul></li>
+        		<li>Remaining: <ul>{remainingResources}</ul></li>
         	</ul>
         </div>
     );
@@ -398,8 +398,8 @@ var TaskComponent = React.createClass({
         		<li>Desired Status: {this.props.task.desiredStatus}</li>
         		<li>Last Status: {this.props.task.lastStatus}</li>
 
-        		<li>Containers: {this.props.task.containers.map(function (o) { return o.name } )}</li>
-        		<li>Overrides: {this.props.task.overrides.containerOverrides.map(function (o) { return o.name} )}</li>
+        		<li>Containers: {this.props.task.containers.map(o => o.name)}</li>
+        		<li>Overrides: {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
         	</ul>
         </div>
     );
@@ -748,18 +748,65 @@ var LoggedInComponent = React.createClass({
   }
 });
 
+var RegisterComponent = React.createClass({
+
+      getInitialState: function () {
+        return {
+            hostname: Config.hostname,
+            bucketName: Config.bucketName,
+            accountName: Config.accountName,
+            clientId: null,
+            identityPoolId: null,
+        };
+      },
+
+    register: function () {
+        var hostname = this.state.hostname;
+        var bucketName = this.state.bucketName;
+        var accountName = this.state.accountName;
+        var clientId = this.state.clientId;
+        var identityPoolId = this.state.identityPoolId;
+
+        registerAccount(bucketName, accountName, clientId, identityPoolId, function (err, res) {
+            this.state.message = res;
+        });
+    },
+
+    render: function () {
+        return (
+            <section>
+                <h2>Register</h2>
+
+                { this.state.message ? <div>{this.state.message}</div> : null }
+
+                <form onChange={this.onFormChange} onSubmit={this.onFormSubmit}>
+                    <p><label>Account Name:</label><br />
+                        <input type="text" name="accountName" value={this.state.accountName} /></p>
+                    <p><label>Client Id:</label><br />
+                        <input type="text" name="clientId" value={this.state.clientId} /></p>
+                    <p><label>Identity Pool Id:</label><br />
+                        <input type="text" name="identityPoolId" value={this.state.identityPoolId} /></p>
+
+                    <p><a href="#" onClick={this.props.onCancel}>cancel</a> <input type="submit" /></p>
+                </form>
+            </section>
+        );
+    }
+});
+
 var LoggedOutComponent = React.createClass({
 
   getInitialState: function () {
     return {
-        account: Config.account,
+        account: Config.accountName,
+        showRegistration: false,
     };
   },
 
   updateAccount: function (event) {
-    Config.account = event.target.value;
-    this.setState({account: Config.account});
-    localStorage.setItem('account', Config.account);
+    Config.accountName = event.target.value;
+    this.setState({account: Config.accountName});
+    localStorage.setItem('accountName', Config.accountName);
   },
 
   loginClick: function () {
@@ -776,17 +823,31 @@ var LoggedOutComponent = React.createClass({
     });
   },
 
+  showRegistrationModal: function (event) {
+    this.setState({ showRegistration: true });
+    return false;
+  },
+
+  hideRegistrationModal: function (event) {
+    this.setState({ showRegistration: false });
+    return false;
+  },
+
     render: function () {
         var account = this.state.account;
         return (
             <div className="loggedOut">
                 <p><input value={account} onChange={this.updateAccount} /></p>
 
-                <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
+                <p><a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
                   <img border="0" alt="Login with Amazon"
                     src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
                     width="156" height="32" />
-                </a>
+                </a></p>
+
+                <p><a href="#" onClick={this.showRegistrationModal}>Register an AWS Account</a></p>
+
+                { this.state.showRegistration ? <RegisterComponent onCancel={this.hideRegistrationModal}></RegisterComponent> : null }
             </div>
         );
     }
