@@ -32,6 +32,7 @@ console.debug('Config', Config);
 var user = {};
 var ecs;
 var s3;
+var ec2;
 
 // just testing
 // var db2 = new PouchDB('ecs-admin');
@@ -110,6 +111,7 @@ function setConfigValue (key, val, cb) {
 }
 
 function fetchData () {
+    user.families = [];
 	user.fetching = true;
 	ecs.listTaskDefinitionFamilies({}, function (err, data) {
 		user.fetching = false;
@@ -123,7 +125,8 @@ function fetchData () {
 			var familyName = family;
 			user.families[i] = {
                 name: familyName,
-                familyName: familyName
+                familyName: familyName,
+                taskDefinitionArns: [],
 			};
 
 			if (user.families) {
@@ -142,7 +145,8 @@ function fetchData () {
 						var taskDefinitionName = taskDefinition;
 						user.families[i].taskDefinitionArns[i2] = {
 							name: taskDefinitionName,
-                            taskDefinitionName: taskDefinitionName
+                            taskDefinitionName: taskDefinitionName,
+                            taskDefinition: []
 						};
 
 						user.fetching = true;
@@ -158,6 +162,8 @@ function fetchData () {
 		});
 	});
 
+    user.clusterArns = [];
+    user.clusters = [];
 	user.fetching = true;
 	ecs.listClusters({}, function (err, data) {
 		user.fetching = false;
@@ -197,6 +203,12 @@ function fetchData () {
 			// console.debug(2, user)
 
 			user.clusters.forEach(function (cluster, i) {
+                user.clusters[i].containerInstanceArns = [];
+                user.clusters[i].containerInstances = [];
+                user.clusters[i].instances = [];
+                user.clusters[i].taskArns = [];
+                user.clusters[i].tasks = [];
+
 				user.fetching = true;
 				ecs.listContainerInstances({
 					cluster: cluster.clusterName
@@ -212,6 +224,16 @@ function fetchData () {
 						}, function (err, data) {
 							user.fetching = false;
 							user.clusters[i].containerInstances = data.containerInstances;
+
+                            if (data.containerInstances.length > 0) {
+                                user.fetching = true;
+                                ec2.describeInstances({
+                                    InstanceIds: data.containerInstances.map(containerInstance => containerInstance.ec2InstanceId)
+                                }, function(err, data) {
+                                    user.fetching = false;
+                                    user.clusters[i].instances = data.reservations;
+                                });
+                            }
 						});
 					}
 				});
@@ -261,6 +283,7 @@ function onLogin (access_token) {
 
 	ecs = new AWS.ECS();
     s3 = new AWS.S3();
+    ec2 = new AWS.EC2();
 
 	fetchData();
 
@@ -318,6 +341,24 @@ window.onAmazonLoginReady = function(cb) {
 //
 // APP
 //
+
+class InstanceComponent extends React.Component {
+
+  componentDidMount() {
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.instances)).open(function(changes) {
+        self.forceUpdate();
+    });
+  }
+
+    render() {
+        console.debug('instances.props', this.props)
+        return (
+            <div>
+            </div>
+        );
+    }
+}
 
 class ContainerInstanceComponent extends React.Component {
 
@@ -541,29 +582,20 @@ class ClusterComponent extends React.Component {
 
   render() {
   	// console.debug('cluster.props', this.props.cluster);
-  	var self = this, tasks = [];
-
-  	if (this.props.cluster && this.props.cluster.tasks) {
-  	  	tasks = this.props.cluster.tasks.map(function (task) {
-  	  		return <TaskComponent task={task} cluster={self.props.cluster}></TaskComponent>
-  	  	});
-  	}
-
-  	var containerInstances = [];
-  	if (this.props.cluster && this.props.cluster.containerInstances) {
-  	  	containerInstances = this.props.cluster.containerInstances.map(function (containerInstance) {
-  	  		return <ContainerInstanceComponent containerInstance={containerInstance} cluster={self.props.cluster}></ContainerInstanceComponent>
-  	  	});
-  	}
-
     return (
     	<div className="cluster">
             <a name={'c-' + this.props.cluster.clusterName} />
 			<h2>Cluster: { this.props.cluster.clusterName } { this.props.cluster.status }</h2>
 
-            <section>{ tasks }</section>
-
-            <section>{ containerInstances }</section>
+            { this.props.cluster.tasks ? <section>{ this.props.cluster.tasks.map(
+                task => <TaskComponent task={task} cluster={this.props.cluster} />
+                ) }</section> : null }
+            { this.props.cluster.containerInstances ? <section>{ this.props.cluster.containerInstances.map(
+                containerInstance => <ContainerInstanceComponent task={containerInstance} cluster={this.props.cluster} />
+                ) }</section> : null }
+            { this.props.cluster.instances ? <section>{ this.props.cluster.instances.map(
+                instance => <InstanceComponent instance={instance} />
+                ) }</section> : null }
 
 			<a href="#" onClick={this.deleteCluster}>Delete cluster</a>
 		</div>
@@ -853,6 +885,13 @@ class LoggedOutComponent extends React.Component {
     this.hideRegistrationModal = this.hideRegistrationModal.bind(this);
   }
 
+  // componentDidMount() {
+  //   let self = this;
+  //   (new ObserveJs.ObjectObserver(window.amazon)).open(function(added, removed, changed, getOldValueFn) {
+  //       self.forceUpdate();
+  //   });
+  // }
+
   updateAccount(event) {
     Config.accountName = event.target.value;
     this.setState({account: Config.accountName});
@@ -888,6 +927,8 @@ class LoggedOutComponent extends React.Component {
         return (
             <div className="loggedOut">
                 <p><input value={account} onChange={this.updateAccount} /></p>
+
+                { typeof amazon !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
 
                 <p><a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
                   <img border="0" alt="Login with Amazon"

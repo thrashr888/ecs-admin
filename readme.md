@@ -32,6 +32,7 @@ TODO
 ----
 
 + separate logged in and out components
++ switch to ES6 syntax
 - list-tasks polling
 - put data in level-js
 - try out mesos chronos and marathon for scheduling
@@ -40,7 +41,7 @@ TODO
 - make UI paned horiz from left to right?
     - [clusters] [task definitions] [container instances [EC2 instances] [tasks]]
 + use S3 to map a domain to a clientid and identityPoolId
-    - register client id uses S3 to write the mapping
+    + register client id uses S3 to write the mapping
     + this lets one install host multiple accounts
 
 
