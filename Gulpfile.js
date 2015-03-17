@@ -64,7 +64,13 @@ gulp.task('scripts', function () {
                       experimental: true
                     }),
                     ['reactify', {es6: true}],
-                    ['envify', {BUILD_ENV: process.env.BUILD_ENV}]
+                    ['envify', {
+                        BUILD_ENV: process.env.BUILD_ENV,
+                        ECSADMIN_BUCKET_NAME: process.env.ECSADMIN_BUCKET_NAME,
+                        ECSADMIN_HOST_NAME: process.env.ECSADMIN_HOST_NAME,
+                        ECSADMIN_ACCOUNT_NAME: process.env.ECSADMIN_ACCOUNT_NAME,
+                        ECSADMIN_REGION: process.env.ECSADMIN_REGION,
+                    }]
                 ],
                 insertGlobals : true,
                 extensions: ['.jsx'],

@@ -15,18 +15,13 @@ window.PouchDB = require('pouchdb');
 
 var Config = {
     env: process.env.BUILD_ENV,
-    // hostname: '', // local
-    // hostname: 'http://thrashr888-ecs-admin.s3-website-us-east-1.amazonaws.com',
-    hostname: 'https://d3csuswr8p8yjt.cloudfront.net',
-    bucketName: 'thrashr888-ecs-admin',
-    accountName: localStorage.getItem('accountName') || 'testaccount',
-    region: 'us-east-1',
+    hostname: process.env.ECSADMIN_HOST_NAME,
+    bucketName: process.env.ECSADMIN_BUCKET_NAME,
+    accountName: localStorage.getItem('accountName') || process.env.ECSADMIN_ACCOUNT_NAME,
+    region: process.env.ECSADMIN_REGION || 'us-east-1',
     identityPoolId: null,
     clientId: null,
 };
-if (Config.env === 'production') {
-    Config.hostname = '';
-}
 console.debug('Config', Config);
 
 var user = {};
@@ -344,7 +339,9 @@ window.onAmazonLoginReady = function(cb) {
 
 class InstanceComponent extends React.Component {
 
-  componentDidMount() {
+  constructor(props) {
+    super(props);
+
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.instances)).open(function(changes) {
         self.forceUpdate();
@@ -362,7 +359,9 @@ class InstanceComponent extends React.Component {
 
 class ContainerInstanceComponent extends React.Component {
 
-  componentDidMount() {
+  constructor(props) {
+    super(props);
+
 	let self = this;
 	(new ObserveJs.ObjectObserver(this.props.containerInstance)).open(function(changes) {
 		self.forceUpdate();
@@ -398,15 +397,14 @@ class TaskComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
     this.runTask = this.runTask.bind(this);
     this.stopTask = this.stopTask.bind(this);
-  }
 
-  componentDidMount() {
-	let self = this;
-	(new ObserveJs.ObjectObserver(this.props.task)).open(function(changes) {
-		self.forceUpdate();
-	});
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.task)).open(function(changes) {
+        self.forceUpdate();
+    });
   }
 
   stopTask() {
@@ -457,7 +455,9 @@ class TaskComponent extends React.Component {
 
 class FamilyComponent extends React.Component {
 
-	componentDidMount() {
+	constructor(props) {
+        super(props);
+
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.family)).open(function(changes) {
 			self.forceUpdate();
@@ -491,7 +491,9 @@ class FamilyComponent extends React.Component {
 
 class ContainerDefinitionComponent extends React.Component {
 
-	componentDidMount() {
+	constructor(props) {
+        super(props);
+
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.containerDefinition)).open(function(changes) {
 			self.forceUpdate();
@@ -519,7 +521,9 @@ class ContainerDefinitionComponent extends React.Component {
 
 class TaskDefinitionComponent extends React.Component {
 
-	componentDidMount() {
+    constructor(props) {
+        super(props);
+
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.taskDefinition)).open(function(changes) {
 			self.forceUpdate();
@@ -555,13 +559,11 @@ class ClusterComponent extends React.Component {
   constructor(props) {
     super(props);
     this.deleteCluster = this.deleteCluster.bind(this);
-  }
 
-  componentDidMount() {
-	let self = this;
-	(new ObserveJs.ObjectObserver(this.props.cluster)).open(function(changes) {
-		self.forceUpdate();
-	});
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.cluster)).open(function(changes) {
+        self.forceUpdate();
+    });
   }
 
   deleteCluster() {
@@ -615,9 +617,7 @@ class TaskDefinitionSectionComponent extends React.Component {
     this.registerTaskDefinition = this.registerTaskDefinition.bind(this);
     this.toggleRegisterTaskModal = this.toggleRegisterTaskModal.bind(this);
     this.closeRegisterTaskModal = this.closeRegisterTaskModal.bind(this);
-  }
 
-  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.families)).open(function(added) {
         self.forceUpdate();
@@ -685,10 +685,9 @@ class ClusterSectionComponent extends React.Component {
 
   constructor(props) {
     super(props);
-    this.createCluster = this.createCluster.bind(this);
-  }
 
-  componentDidMount() {
+    this.createCluster = this.createCluster.bind(this);
+
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.clusters)).open(function(added) {
         self.forceUpdate();
@@ -730,9 +729,7 @@ class HeaderComponent extends React.Component {
   constructor(props) {
     super(props);
     this.logoutClick = this.logoutClick.bind(this);
-  }
 
-  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(added) {
         if (added.profile) self.forceUpdate();
@@ -770,14 +767,13 @@ class LoggedInComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
         nav: 'clusters',
         user: props.user,
     };
     this.navClick = this.navClick.bind(this);
-  }
 
-  componentDidMount() {
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
         self.forceUpdate();
@@ -820,6 +816,7 @@ class RegisterComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
         hostname: Config.hostname,
         bucketName: Config.bucketName,
@@ -875,6 +872,7 @@ class LoggedOutComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
         account: Config.accountName,
         showRegistration: false,
@@ -883,14 +881,13 @@ class LoggedOutComponent extends React.Component {
     this.loginClick = this.loginClick.bind(this);
     this.showRegistrationModal = this.showRegistrationModal.bind(this);
     this.hideRegistrationModal = this.hideRegistrationModal.bind(this);
-  }
 
-  // componentDidMount() {
-  //   let self = this;
-  //   (new ObserveJs.ObjectObserver(window.amazon)).open(function(added, removed, changed, getOldValueFn) {
-  //       self.forceUpdate();
-  //   });
-  // }
+    // let self = this;
+    // (new ObserveJs.ObjectObserver(window.amazon)).open(function(added, removed, changed, getOldValueFn) {
+    //     console.log('boo window')
+    //     if (added.amazon) self.forceUpdate();
+    // });
+  }
 
   updateAccount(event) {
     Config.accountName = event.target.value;
@@ -924,11 +921,12 @@ class LoggedOutComponent extends React.Component {
 
     render() {
         var account = this.state.account;
+        let amzn = window.amazon;
         return (
             <div className="loggedOut">
                 <p><input value={account} onChange={this.updateAccount} /></p>
 
-                { typeof amazon !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
+                { typeof amzn !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
 
                 <p><a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
                   <img border="0" alt="Login with Amazon"
@@ -946,7 +944,9 @@ class LoggedOutComponent extends React.Component {
 
 class PageComponent extends React.Component {
 
-  componentDidMount() {
+  constructor(props) {
+    super(props);
+
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(added, removed, changed, getOldValueFn) {
         if (added.profile) self.forceUpdate();
@@ -966,3 +966,10 @@ React.render(
 	<PageComponent user={user}></PageComponent>,
 	document.getElementById('App')
 );
+
+
+module.exports = {
+    Config,
+    ecsAdminInstall,
+    registerAccount
+}

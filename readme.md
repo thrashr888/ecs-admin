@@ -25,6 +25,9 @@ Run
      // or
      > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server node server.js
      // or
+     > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
+     > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
+     > export ECSADMIN_ACCOUNT_NAME=testaccount
      > gulp watch
 
 
