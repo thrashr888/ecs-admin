@@ -21,15 +21,30 @@ Build
 Run
 ---
 
-     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server /usr/local/Cellar/iojs/1.5.1/bin/iojs server.js
-     // or
-     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server node server.js
-     // or
-     > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
-     > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
-     > export ECSADMIN_ACCOUNT_NAME=testaccount
-     > gulp watch
+You can run the node server directly:
 
+    // Homebrew's io.js
+    > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server /usr/local/Cellar/iojs/1.5.1/bin/iojs server.js
+    // or NodeJS
+    > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server node server.js
+
+Or you can use the gulp task:
+
+    > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
+    > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
+    > export ECSADMIN_ACCOUNT_NAME=testaccount
+    > gulp watch
+
+Deploy
+------
+
+    > export AWS_ACCESS_KEY_ID=your_key_id
+    > export AWS_SECRET_ACCESS_KEY=your_secret_key
+    > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
+    > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
+    > export ECSADMIN_ACCOUNT_NAME=testaccount
+    > S3_BUCKET=thrashr888-ecs-admin 
+    > gulp deploy
 
 TODO
 ----

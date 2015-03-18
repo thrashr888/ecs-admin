@@ -2,6 +2,10 @@
   "name": "ecs-admin",
   "version": "0.0.1",
   "description": "ECS Admin",
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:thrashr888/ecs-admin.git"
+  },
   "main": "index.js",
   "scripts": {
     "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js"
@@ -19,6 +23,7 @@
     "connect-livereload": "^0.5.3",
     "express": "^4.12.2",
     "http2": "^3.2.0",
+    "immutable": "^3.6.4",
     "jquery": "^2.1.3",
     "level-js": "^2.1.6",
     "mime-types": "^2.0.9",
@@ -52,5 +57,8 @@
     "gulp-sourcemaps": "^1.5.0",
     "gulp-useref": "^1.1.1",
     "reactify": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=0.10.0"
   }
 }

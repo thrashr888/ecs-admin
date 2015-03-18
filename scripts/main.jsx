@@ -6,7 +6,8 @@ var React = require('react');
 var ObserveJs = require('observe-js');
 var $ = require('jquery');
 var leveljs = require('level-js');
-window.PouchDB = require('pouchdb');
+var Immutable = require('immutable');
+ window.PouchDB = require('pouchdb');
 // PouchDB.debug.enable('*');
 
 //
@@ -25,6 +26,7 @@ var Config = {
 console.debug('Config', Config);
 
 var user = {};
+// var user = Immutable.Map();
 var ecs;
 var s3;
 var ec2;
@@ -379,14 +381,15 @@ class ContainerInstanceComponent extends React.Component {
     return (
         <div className="container-instance">
             <h3>Container Instance {this.props.containerInstance.containerInstanceArn.replace(/(.*\/)[0-9A-Z\-]+/, '')}</h3>
-        	<ul>
-        		<li>Arn: {this.props.containerInstance.containerInstanceArn}</li>
-        		<li>Agent Connected: {this.props.containerInstance.agentConnected ? 'yes' : 'no'}</li>
-        		<li>EC2 Instance Id: {this.props.containerInstance.ec2InstanceId}</li>
-        		<li>Status: {this.props.containerInstance.status}</li>
 
-        		<li>Registered: <ul>{registeredResources}</ul></li>
-        		<li>Remaining: <ul>{remainingResources}</ul></li>
+        	<ul className="list-group">
+        		<li className="list-group-item">Arn: {this.props.containerInstance.containerInstanceArn}</li>
+        		<li className="list-group-item">Agent Connected: {this.props.containerInstance.agentConnected ? 'yes' : 'no'}</li>
+        		<li className="list-group-item">EC2 Instance Id: {this.props.containerInstance.ec2InstanceId}</li>
+        		<li className="list-group-item">Status: {this.props.containerInstance.status}</li>
+
+        		<li className="list-group-item">Registered: <ul>{registeredResources}</ul></li>
+        		<li className="list-group-item">Remaining: <ul>{remainingResources}</ul></li>
         	</ul>
         </div>
     );
@@ -439,14 +442,14 @@ class TaskComponent extends React.Component {
         <div className="task">
         	<h3>Task</h3>
         	<p><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.startTask}>Stop Task</a> : null }</p>
-        	<ul>
-        		<li>Task Definition: {this.props.task.taskDefinitionArn}</li>
-        		<li>Container Instance: {this.props.task.containerInstanceArn}</li>
-        		<li>Desired Status: {this.props.task.desiredStatus}</li>
-        		<li>Last Status: {this.props.task.lastStatus}</li>
+        	<ul className="list-group">
+        		<li className="list-group-item">Task Definition: {this.props.task.taskDefinitionArn}</li>
+        		<li className="list-group-item">Container Instance: {this.props.task.containerInstanceArn}</li>
+        		<li className="list-group-item">Desired Status: {this.props.task.desiredStatus}</li>
+        		<li className="list-group-item">Last Status: {this.props.task.lastStatus}</li>
 
-        		<li>Containers: {this.props.task.containers.map(o => o.name)}</li>
-        		<li>Overrides: {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
+        		<li className="list-group-item">Containers: {this.props.task.containers.map(o => o.name)}</li>
+        		<li className="list-group-item">Overrides: {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
         	</ul>
         </div>
     );
@@ -503,17 +506,17 @@ class ContainerDefinitionComponent extends React.Component {
 	render() {
 	  	// console.debug('containerDefinition.props', this.props.containerDefinition);
 		return (
-			<ul>
-				<li>CPU: {this.props.containerDefinition.cpu}</li>
-				<li>Environment: {this.props.containerDefinition.environment.join(', ')}</li>
-				<li>Essential: {this.props.containerDefinition.essential ? 'yes' : 'no'}</li>
-				<li>Image: {this.props.containerDefinition.image}</li>
-				<li>CPU: {this.props.containerDefinition.cpu}</li>
-				<li>Memory: {this.props.containerDefinition.memory}</li>
-				<li>Name: {this.props.containerDefinition.name}</li>
-				<li>Mount Points: {this.props.containerDefinition.mountPoints.join(', ')}</li>
-				<li>Port Mappings: {this.props.containerDefinition.portMappings.join(', ')}</li>
-				<li>Volumes From: {this.props.containerDefinition.volumesFrom.join(', ')}</li>
+			<ul className="list-group">
+				<li className="list-group-item">CPU: {this.props.containerDefinition.cpu}</li>
+				<li className="list-group-item">Environment: {this.props.containerDefinition.environment.join(', ')}</li>
+				<li className="list-group-item">Essential: {this.props.containerDefinition.essential ? 'yes' : 'no'}</li>
+				<li className="list-group-item">Image: {this.props.containerDefinition.image}</li>
+				<li className="list-group-item">CPU: {this.props.containerDefinition.cpu}</li>
+				<li className="list-group-item">Memory: {this.props.containerDefinition.memory}</li>
+				<li className="list-group-item">Name: {this.props.containerDefinition.name}</li>
+				<li className="list-group-item">Mount Points: {this.props.containerDefinition.mountPoints.join(', ')}</li>
+				<li className="list-group-item">Port Mappings: {this.props.containerDefinition.portMappings.join(', ')}</li>
+				<li className="list-group-item">Volumes From: {this.props.containerDefinition.volumesFrom.join(', ')}</li>
 			</ul>
 		);
 	}
@@ -541,13 +544,13 @@ class TaskDefinitionComponent extends React.Component {
 		return (
 			<div>
 				<h2>TaskDefinition</h2>
-				<ul>
-					<li>Task Definition: {this.props.taskDefinition.taskDefinitionArn}</li>
-					<li>Revision: {this.props.taskDefinition.revision}</li>
-					<li>Family: {this.props.taskDefinition.family}</li>
+				<ul className="list-group">
+					<li className="list-group-item">Task Definition: {this.props.taskDefinition.taskDefinitionArn}</li>
+					<li className="list-group-item">Revision: {this.props.taskDefinition.revision}</li>
+					<li className="list-group-item">Family: {this.props.taskDefinition.family}</li>
 
-					<li>Volumes: {this.props.taskDefinition.volumes.join(', ')}</li>
-					<li>Container Definitions: {containerDefinitions}</li>
+					<li className="list-group-item">Volumes: {this.props.taskDefinition.volumes.join(', ')}</li>
+					<li className="list-group-item">Container Definitions: {containerDefinitions}</li>
 				</ul>
 			</div>
 		);
@@ -672,9 +675,14 @@ class TaskDefinitionSectionComponent extends React.Component {
                     <p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> | <button onClick={this.registerTaskDefinition}>Register Task</button></p>
                 </div> : null }
 
-                <nav>{ this.props.families.map((family) => <li><a href={'#f-' + family.name}>{family.name}</a></li>) }</nav>
+                <nav>
+                    <ul className="nav nav-pills nav-stacked">{
+                        this.props.families.map((family) => <li><a href={'#f-' + family.name}>{family.name}</a></li>)
+                    }</ul>
+                </nav>
 
                 { families }
+
                 <a href="#">top</a>
             </section>
         );
@@ -715,7 +723,11 @@ class ClusterSectionComponent extends React.Component {
                 <h2>Clusters</h2>
                 <p><button onClick={this.createCluster}>Create Cluster</button></p>
 
-                <nav>{ this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>) }</nav>
+                <nav>
+                    <ul className="nav nav-pills nav-stacked">{
+                        this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>)
+                    }</ul>
+                </nav>
 
                 { clusters }
                 <a href="#">top</a>
@@ -748,7 +760,9 @@ class HeaderComponent extends React.Component {
             <header>
                 <p><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></p>
                 { this.props.user.fetching ? <p>Loading...</p> : null }
-                <h1>User: {this.props.user.profile.Name}</h1>
+                <div className="page-header">
+                    <h1>{this.props.user.profile.Name}</h1>
+                </div>
             </header>
         );
     }
@@ -769,7 +783,7 @@ class LoggedInComponent extends React.Component {
     super(props);
 
     this.state = {
-        nav: 'clusters',
+        nav: 'tasks',
         user: props.user,
     };
     this.navClick = this.navClick.bind(this);
@@ -796,15 +810,15 @@ class LoggedInComponent extends React.Component {
             <HeaderComponent user={this.props.user} />
 
             <nav>
-                <ul>
+                <ul className="nav nav-pills">
                     <li><a href="#" onClick={this.navClick('clusters')}>Clusters</a></li>
                     <li><a href="#" onClick={this.navClick('tasks')}>Tasks</a></li>
                 </ul>
             </nav>
 
-            { this.props.user.clusters && this.state.nav === 'clusters' ? <ClusterSectionComponent clusters={this.props.user.clusters} /> : null }
-
             { this.props.user.families && this.state.nav === 'tasks' ? <TaskDefinitionSectionComponent families={this.props.user.families} /> : null }
+
+            { this.props.user.clusters && this.state.nav === 'clusters' ? <ClusterSectionComponent clusters={this.props.user.clusters} /> : null }
 
             <FooterComponent />
         </div>
@@ -848,22 +862,33 @@ class RegisterComponent extends React.Component {
 
     render() {
         return (
-            <section>
-                <h2>Register</h2>
+            <div className="row">
+                <div className="page-header">
+                    <h1>Register</h1>
+                </div>
 
                 { this.state.message ? <div>{this.state.message}</div> : null }
 
                 <form onChange={this.onFormChange} onSubmit={this.submitHandler}>
-                    <p><label>Account Name:</label><br />
-                        <input type="text" name="accountName" value={this.state.accountName} onChange={this.changeHandler} /></p>
-                    <p><label>Client Id:</label><br />
-                        <input type="text" name="clientId" value={this.state.clientId} onChange={this.changeHandler} /></p>
-                    <p><label>Identity Pool Id:</label><br />
-                        <input type="text" name="identityPoolId" value={this.state.identityPoolId} onChange={this.changeHandler} /></p>
+                    <div className="form-group">
+                        <label for="accountName">Account Name</label>
+                        <input type="text" className="form-control" id="accountName" placeholder="Enter account name" value={this.state.accountName} onChange={this.changeHandler} />
+                        <p className="help-block">This is a namespace used to identify your Org.</p>
+                    </div>
+                    <div className="form-group">
+                        <label for="clientId">Client Id</label>
+                        <input type="text" className="form-control" id="clientId" placeholder="Enter Client Id" value={this.state.clientId} onChange={this.changeHandler} />
+                    </div>
+                    <div className="form-group">
+                        <label for="identityPoolId">Identity Pool Id</label>
+                        <input type="text" className="form-control" id="identityPoolId" placeholder="Enter Identity Pool Id" value={this.state.identityPoolId} onChange={this.changeHandler} />
+                    </div>
 
-                    <p><a href="#" onClick={this.props.onCancel}>cancel</a> <input type="submit" /></p>
+                    <div>
+                        <a href="#" onClick={this.props.onCancel} className="col-sm-3">cancel</a>
+                        <input type="submit" value="Register Account" className="btn btn-default col-sm-6 col-sm-offset-3" /></div>
                 </form>
-            </section>
+            </div>
         );
     }
 };
@@ -923,20 +948,36 @@ class LoggedOutComponent extends React.Component {
         var account = this.state.account;
         let amzn = window.amazon;
         return (
-            <div className="loggedOut">
-                <p><input value={account} onChange={this.updateAccount} /></p>
+            <div className="loggedOut col-sm-4 col-sm-offset-4">
 
-                { typeof amzn !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
+                { !this.state.showRegistration ? <form className="row">
 
-                <p><a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
-                  <img border="0" alt="Login with Amazon"
-                    src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
-                    width="156" height="32" />
-                </a></p>
+                    <div className="page-header">
+                        <h1>Log in</h1>
+                    </div>
 
-                <p><a href="#" onClick={this.showRegistrationModal}>Register an AWS Account</a></p>
+                    { typeof amzn !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
 
-                { this.state.showRegistration ? <RegisterComponent onCancel={this.hideRegistrationModal}></RegisterComponent> : null }
+                    <div className="form-group">
+                        <label for="accountName">Account Name</label>
+                        <input type="text" className="form-control" id="accountName" placeholder="Account Name" value={account} onChange={this.updateAccount} />
+                    </div>
+
+                    <div className="form-group">
+                        <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
+                            <img border="0" alt="Login with Amazon"
+                            src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
+                            width="156" height="32" />
+                        </a>
+                    </div>
+
+                    <div>
+                        <a href="#" onClick={this.showRegistrationModal}>Register an AWS Account</a>
+                    </div>
+
+                </form> : null }
+
+                { this.state.showRegistration ? <RegisterComponent onCancel={this.hideRegistrationModal} className="row" /> : null }
             </div>
         );
     }
@@ -955,7 +996,7 @@ class PageComponent extends React.Component {
 
     render() {
         return (
-            <div className="page">
+            <div className="page container">
                 { this.props.user.profile ? <LoggedInComponent user={this.props.user} /> : <LoggedOutComponent /> }
             </div>
         );

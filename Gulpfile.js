@@ -25,8 +25,8 @@ gulp.task('deploy', ['set-production', 'build'], function () {
     var aws = {
         key: process.env.AWS_ACCESS_KEY_ID,
         secret: process.env.AWS_SECRET_ACCESS_KEY,
-        bucket: process.env.S3_BUCKET,
-        region: process.env.S3_REGION || 'us-east-1',
+        bucket: process.env.ECSADMIN_BUCKET_NAME,
+        region: process.env.ECSADMIN_REGION || 'us-east-1',
     };
     var options = {headers: {
         'x-amz-acl': 'public-read'
@@ -69,7 +69,7 @@ gulp.task('scripts', function () {
                         ECSADMIN_BUCKET_NAME: process.env.ECSADMIN_BUCKET_NAME,
                         ECSADMIN_HOST_NAME: process.env.ECSADMIN_HOST_NAME,
                         ECSADMIN_ACCOUNT_NAME: process.env.ECSADMIN_ACCOUNT_NAME,
-                        ECSADMIN_REGION: process.env.ECSADMIN_REGION,
+                        ECSADMIN_REGION: process.env.ECSADMIN_REGION || 'us-east-1',
                     }]
                 ],
                 insertGlobals : true,
