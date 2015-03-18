@@ -228,7 +228,8 @@ function fetchData () {
                                     InstanceIds: data.containerInstances.map(containerInstance => containerInstance.ec2InstanceId)
                                 }, function(err, data) {
                                     user.fetching = false;
-                                    user.clusters[i].instances = data.reservations;
+                                    console.debug('instances.res', data)
+                                    user.clusters[i].instances = data.Reservations;
                                 });
                             }
 						});
@@ -345,15 +346,77 @@ class InstanceComponent extends React.Component {
     super(props);
 
     let self = this;
-    (new ObserveJs.ObjectObserver(this.props.instances)).open(function(changes) {
+    (new ObserveJs.ObjectObserver(this.props.instance)).open(function(changes) {
         self.forceUpdate();
     });
   }
 
     render() {
-        console.debug('instances.props', this.props)
+        console.debug('instance.props', this.props)
         return (
-            <div>
+            <div className="instance">
+                <h4>Instance {this.props.instance.InstanceId}</h4>
+                <ul>
+                    <li><b>Ami Launch Index:</b> {this.props.instance.AmiLaunchIndex}</li>
+                    <li><b>Architecture:</b> {this.props.instance.Architecture}</li>
+                    <li><b>Block Device Mappings:</b> {this.props.instance.BlockDeviceMappings}</li>
+                    <li><b>Client Token:</b> {this.props.instance.ClientToken}</li>
+                    <li><b>EBS Optimized:</b> {this.props.instance.EbsOptimized}</li>
+                    <li><b>Hypervisor:</b> {this.props.instance.Hypervisor}</li>
+                    <li><b>IAM Instance Profile:</b> {this.props.instance.IamInstanceProfile}</li>
+                    <li><b>Image Id:</b> {this.props.instance.ImageId}</li>
+                    <li><b>Instance Id:</b> {this.props.instance.InstanceId}</li>
+                    <li><b>Instance Type:</b> {this.props.instance.InstanceType}</li>
+                    <li><b>Key Name:</b> {this.props.instance.KeyName}</li>
+                    <li><b>Launch Time:</b> {this.props.instance.LaunchTime}</li>
+                    <li><b>Monitoring:</b> {this.props.instance.Monitoring}</li>
+                    <li><b>Network Interfaces:</b> {this.props.instance.NetworkInterfaces}</li>
+                    <li><b>Placement:</b> {this.props.instance.Placement}</li>
+                    <li><b>Private DNS Name:</b> {this.props.instance.PrivateDnsName}</li>
+                    <li><b>Private IP Address:</b> {this.props.instance.PrivateIpAddress}</li>
+                    <li><b>Product Codes:</b> {this.props.instance.ProductCodes}</li>
+                    <li><b>Public DNS Name:</b> {this.props.instance.PublicDnsName}</li>
+                    <li><b>Public IP Address:</b> {this.props.instance.PublicIpAddress}</li>
+                    <li><b>Root Device Name:</b> {this.props.instance.RootDeviceName}</li>
+                    <li><b>Root Device Type:</b> {this.props.instance.RootDeviceType}</li>
+                    <li><b>Security Groups:</b> {this.props.instance.SecurityGroups}</li>
+                    <li><b>Source Dest Check:</b> {this.props.instance.SourceDestCheck}</li>
+                    <li><b>State:</b> {this.props.instance.State}</li>
+                    <li><b>State Transition Reason:</b> {this.props.instance.StateTransitionReason}</li>
+                    <li><b>Subnet Id:</b> {this.props.instance.SubnetId}</li>
+                    <li><b>Tags:</b> {this.props.instance.Tags}</li>
+                    <li><b>Virtualization Type:</b> {this.props.instance.VirtualizationType}</li>
+                    <li><b>VPC Id:</b> {this.props.instance.VpcId}</li>
+                </ul>
+            </div>
+        );
+    }
+}
+
+class InstanceReservationComponent extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.instance)).open(function(changes) {
+        self.forceUpdate();
+    });
+  }
+
+    render() {
+        console.debug('instanceReservation.props', this.props)
+        return (
+            <div className="instance-reservation">
+                <h3>Instance Reservation {this.props.instance.ReservationId}</h3>
+
+                <ul className="list-group">
+                    <li className="list-group-item"><b>Owner Id:</b> {this.props.instance.OwnerId}</li>
+                    <li className="list-group-item"><b>Groups:</b> {this.props.instance.Groups ? this.props.instance.Groups.join(', ') : 'None'}</li>
+                    <li className="list-group-item"><h3>Instances:</h3> {
+                        this.props.instance.Instances.map(instance => <InstanceComponent instance={instance} />)
+                    }</li>
+                </ul>
             </div>
         );
     }
@@ -383,13 +446,13 @@ class ContainerInstanceComponent extends React.Component {
             <h3>Container Instance {this.props.containerInstance.containerInstanceArn.replace(/(.*\/)[0-9A-Z\-]+/, '')}</h3>
 
         	<ul className="list-group">
-        		<li className="list-group-item">Arn: {this.props.containerInstance.containerInstanceArn}</li>
-        		<li className="list-group-item">Agent Connected: {this.props.containerInstance.agentConnected ? 'yes' : 'no'}</li>
-        		<li className="list-group-item">EC2 Instance Id: {this.props.containerInstance.ec2InstanceId}</li>
-        		<li className="list-group-item">Status: {this.props.containerInstance.status}</li>
+        		<li className="list-group-item"><b>Arn:</b> {this.props.containerInstance.containerInstanceArn}</li>
+        		<li className="list-group-item"><b>Agent Connected:</b> {this.props.containerInstance.agentConnected ? 'YES' : 'NO'}</li>
+        		<li className="list-group-item"><b>EC2 Instance Id:</b> {this.props.containerInstance.ec2InstanceId}</li>
+        		<li className="list-group-item"><b>Status:</b> {this.props.containerInstance.status}</li>
 
-        		<li className="list-group-item">Registered: <ul>{registeredResources}</ul></li>
-        		<li className="list-group-item">Remaining: <ul>{remainingResources}</ul></li>
+        		<li className="list-group-item"><b>Registered:</b> <ul>{registeredResources}</ul></li>
+        		<li className="list-group-item"><b>Remaining:</b> <ul>{remainingResources}</ul></li>
         	</ul>
         </div>
     );
@@ -447,13 +510,13 @@ class TaskComponent extends React.Component {
         	<h3>Task</h3>
         	<p><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.startTask}>Stop Task</a> : null }</p>
         	<ul className="list-group">
-        		<li className="list-group-item">Task Definition: {this.props.task.taskDefinitionArn}</li>
-        		<li className="list-group-item">Container Instance: {this.props.task.containerInstanceArn}</li>
-        		<li className="list-group-item">Desired Status: {this.props.task.desiredStatus}</li>
-        		<li className="list-group-item">Last Status: {this.props.task.lastStatus}</li>
+        		<li className="list-group-item"><b>Task Definition:</b> {this.props.task.taskDefinitionArn}</li>
+        		<li className="list-group-item"><b>Container Instance:</b> {this.props.task.containerInstanceArn}</li>
+        		<li className="list-group-item"><b>Desired Status:</b> {this.props.task.desiredStatus}</li>
+        		<li className="list-group-item"><b>Last Status:</b> {this.props.task.lastStatus}</li>
 
-        		<li className="list-group-item">Containers: {this.props.task.containers.map(o => o.name)}</li>
-        		<li className="list-group-item">Overrides: {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
+        		<li className="list-group-item"><b>Containers:</b> {this.props.task.containers.map(o => o.name)}</li>
+        		<li className="list-group-item"><b>Overrides:</b> {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
         	</ul>
         </div>
     );
@@ -511,16 +574,16 @@ class ContainerDefinitionComponent extends React.Component {
 	  	// console.debug('containerDefinition.props', this.props.containerDefinition);
 		return (
 			<ul className="list-group">
-				<li className="list-group-item">CPU: {this.props.containerDefinition.cpu}</li>
-				<li className="list-group-item">Environment: {this.props.containerDefinition.environment.join(', ')}</li>
-				<li className="list-group-item">Essential: {this.props.containerDefinition.essential ? 'yes' : 'no'}</li>
-				<li className="list-group-item">Image: {this.props.containerDefinition.image}</li>
-				<li className="list-group-item">CPU: {this.props.containerDefinition.cpu}</li>
-				<li className="list-group-item">Memory: {this.props.containerDefinition.memory}</li>
-				<li className="list-group-item">Name: {this.props.containerDefinition.name}</li>
-				<li className="list-group-item">Mount Points: {this.props.containerDefinition.mountPoints.join(', ')}</li>
-				<li className="list-group-item">Port Mappings: {this.props.containerDefinition.portMappings.join(', ')}</li>
-				<li className="list-group-item">Volumes From: {this.props.containerDefinition.volumesFrom.join(', ')}</li>
+				<li className="list-group-item"><b>CPU:</b> {this.props.containerDefinition.cpu}</li>
+				<li className="list-group-item"><b>Environment:</b> {this.props.containerDefinition.environment.join(', ')}</li>
+				<li className="list-group-item"><b>Essential:</b> {this.props.containerDefinition.essential ? 'yes' : 'no'}</li>
+				<li className="list-group-item"><b>Image:</b> {this.props.containerDefinition.image}</li>
+				<li className="list-group-item"><b>CPU:</b> {this.props.containerDefinition.cpu}</li>
+				<li className="list-group-item"><b>Memory:</b> {this.props.containerDefinition.memory}</li>
+				<li className="list-group-item"><b>Name:</b> {this.props.containerDefinition.name}</li>
+				<li className="list-group-item"><b>Mount Points:</b> {this.props.containerDefinition.mountPoints.join(', ')}</li>
+				<li className="list-group-item"><b>Port Mappings:</b> {this.props.containerDefinition.portMappings.join(', ')}</li>
+				<li className="list-group-item"><b>Volumes From:</b> {this.props.containerDefinition.volumesFrom.join(', ')}</li>
 			</ul>
 		);
 	}
@@ -549,12 +612,12 @@ class TaskDefinitionComponent extends React.Component {
 			<div>
 				<h2>TaskDefinition</h2>
 				<ul className="list-group">
-					<li className="list-group-item">Task Definition: {this.props.taskDefinition.taskDefinitionArn}</li>
-					<li className="list-group-item">Revision: {this.props.taskDefinition.revision}</li>
-					<li className="list-group-item">Family: {this.props.taskDefinition.family}</li>
+					<li className="list-group-item"><b>Task Definition:</b> {this.props.taskDefinition.taskDefinitionArn}</li>
+					<li className="list-group-item"><b>Revision:</b> {this.props.taskDefinition.revision}</li>
+					<li className="list-group-item"><b>Family:</b> {this.props.taskDefinition.family}</li>
 
-					<li className="list-group-item">Volumes: {this.props.taskDefinition.volumes ? this.props.taskDefinition.volumes.join(', ') : 'None'}</li>
-					<li className="list-group-item">Container Definitions: {containerDefinitions}</li>
+					<li className="list-group-item"><b>Volumes:</b> {this.props.taskDefinition.volumes ? this.props.taskDefinition.volumes.join(', ') : 'None'}</li>
+					<li className="list-group-item"><b>Container Definitions:</b> {containerDefinitions}</li>
 				</ul>
 			</div>
 		);
@@ -596,9 +659,20 @@ class ClusterComponent extends React.Component {
             <a name={'c-' + this.props.cluster.clusterName} />
 			<h2>Cluster: { this.props.cluster.clusterName } { this.props.cluster.status }</h2>
 
-            <section>{ this.props.cluster.tasks.map(task => <TaskComponent task={task} cluster={this.props.cluster} /> ) }</section>
-            <section>{ this.props.cluster.containerInstances.map(containerInstance => <ContainerInstanceComponent containerInstance={containerInstance} cluster={this.props.cluster} /> ) }</section>
-            <section>{ this.props.cluster.instances.map(instance => <InstanceComponent instance={instance} cluster={this.props.cluster} /> ) }</section>
+            <section>
+                <h3>Tasks</h3>
+                { this.props.cluster.tasks.map(task => <TaskComponent task={task} cluster={this.props.cluster} /> ) }
+            </section>
+
+            <section>
+                <h3>Container Instances</h3>
+                { this.props.cluster.containerInstances.map(containerInstance => <ContainerInstanceComponent containerInstance={containerInstance} cluster={this.props.cluster} /> ) }
+            </section>
+
+            <section>
+                <h3>Instances</h3>
+                { this.props.cluster.instances.map(instance => <InstanceReservationComponent instance={instance} cluster={this.props.cluster} /> ) }
+            </section>
 
 			<a href="#" onClick={this.deleteCluster}>Delete cluster</a>
 		</div>
@@ -808,7 +882,7 @@ class LoggedInComponent extends React.Component {
   }
 
   render() {
-    console.debug('user.props', this.props.user);
+    // console.debug('user.props', this.props.user);
     return (
         <div className="user row col-sm-10 col-sm-offset-1">
             <HeaderComponent user={this.props.user} />
@@ -875,16 +949,16 @@ class RegisterComponent extends React.Component {
 
                 <form onChange={this.onFormChange} onSubmit={this.submitHandler}>
                     <div className="form-group">
-                        <label for="accountName">Account Name</label>
+                        <label htmlFor="accountName">Account Name</label>
                         <input type="text" className="form-control" id="accountName" placeholder="Enter account name" value={this.state.accountName} onChange={this.changeHandler} />
                         <p className="help-block">This is a namespace used to identify your Org.</p>
                     </div>
                     <div className="form-group">
-                        <label for="clientId">Client Id</label>
+                        <label htmlFor="clientId">Client Id</label>
                         <input type="text" className="form-control" id="clientId" placeholder="Enter Client Id" value={this.state.clientId} onChange={this.changeHandler} />
                     </div>
                     <div className="form-group">
-                        <label for="identityPoolId">Identity Pool Id</label>
+                        <label htmlFor="identityPoolId">Identity Pool Id</label>
                         <input type="text" className="form-control" id="identityPoolId" placeholder="Enter Identity Pool Id" value={this.state.identityPoolId} onChange={this.changeHandler} />
                     </div>
 
@@ -963,7 +1037,7 @@ class LoggedOutComponent extends React.Component {
                     { typeof amzn !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
 
                     <div className="form-group">
-                        <label for="accountName">Account Name</label>
+                        <label htmlFor="accountName">Account Name</label>
                         <input type="text" className="form-control" id="accountName" placeholder="Account Name" value={account} onChange={this.updateAccount} />
                     </div>
 
