@@ -395,6 +395,10 @@ class ContainerInstanceComponent extends React.Component {
     );
   }
 };
+ContainerInstanceComponent.propTypes = {
+    containerInstance: React.PropTypes.object.isRequired,
+    cluster: React.PropTypes.object
+};
 
 class TaskComponent extends React.Component {
 
@@ -474,7 +478,7 @@ class FamilyComponent extends React.Component {
 			taskDefinitions = this.props.family.taskDefinitionArns.map(function (taskDefinitionArn) {
 				// console.log('taskDefinitionArn.taskDefinition', taskDefinitionArn)
 				if (taskDefinitionArn.taskDefinition) {
-					return <TaskDefinitionComponent taskDefinition={taskDefinitionArn.taskDefinition}></TaskDefinitionComponent>
+					return <TaskDefinitionComponent taskDefinition={taskDefinitionArn.taskDefinition} />
 				} else {
 					(new ObserveJs.ObjectObserver(taskDefinitionArn)).open(function(changes) {
 						self.forceUpdate();
@@ -549,7 +553,7 @@ class TaskDefinitionComponent extends React.Component {
 					<li className="list-group-item">Revision: {this.props.taskDefinition.revision}</li>
 					<li className="list-group-item">Family: {this.props.taskDefinition.family}</li>
 
-					<li className="list-group-item">Volumes: {this.props.taskDefinition.volumes.join(', ')}</li>
+					<li className="list-group-item">Volumes: {this.props.taskDefinition.volumes ? this.props.taskDefinition.volumes.join(', ') : 'None'}</li>
 					<li className="list-group-item">Container Definitions: {containerDefinitions}</li>
 				</ul>
 			</div>
@@ -592,20 +596,21 @@ class ClusterComponent extends React.Component {
             <a name={'c-' + this.props.cluster.clusterName} />
 			<h2>Cluster: { this.props.cluster.clusterName } { this.props.cluster.status }</h2>
 
-            { this.props.cluster.tasks ? <section>{ this.props.cluster.tasks.map(
-                task => <TaskComponent task={task} cluster={this.props.cluster} />
-                ) }</section> : null }
-            { this.props.cluster.containerInstances ? <section>{ this.props.cluster.containerInstances.map(
-                containerInstance => <ContainerInstanceComponent task={containerInstance} cluster={this.props.cluster} />
-                ) }</section> : null }
-            { this.props.cluster.instances ? <section>{ this.props.cluster.instances.map(
-                instance => <InstanceComponent instance={instance} />
-                ) }</section> : null }
+            <section>{ this.props.cluster.tasks.map(task => <TaskComponent task={task} cluster={this.props.cluster} /> ) }</section>
+            <section>{ this.props.cluster.containerInstances.map(containerInstance => <ContainerInstanceComponent containerInstance={containerInstance} cluster={this.props.cluster} /> ) }</section>
+            <section>{ this.props.cluster.instances.map(instance => <InstanceComponent instance={instance} cluster={this.props.cluster} /> ) }</section>
 
 			<a href="#" onClick={this.deleteCluster}>Delete cluster</a>
 		</div>
     );
   }
+};
+ClusterComponent.defaultProps = {
+    cluster: {
+        tasks: [],
+        containerInstances: [],
+        instances: [],
+    }
 };
 
 class TaskDefinitionSectionComponent extends React.Component {
@@ -783,8 +788,7 @@ class LoggedInComponent extends React.Component {
     super(props);
 
     this.state = {
-        nav: 'tasks',
-        user: props.user,
+        nav: 'clusters'
     };
     this.navClick = this.navClick.bind(this);
 
@@ -806,7 +810,7 @@ class LoggedInComponent extends React.Component {
   render() {
     console.debug('user.props', this.props.user);
     return (
-        <div className="user">
+        <div className="user row col-sm-10 col-sm-offset-1">
             <HeaderComponent user={this.props.user} />
 
             <nav>
@@ -885,7 +889,7 @@ class RegisterComponent extends React.Component {
                     </div>
 
                     <div>
-                        <a href="#" onClick={this.props.onCancel} className="col-sm-3">cancel</a>
+                        <a href="#" onClick={this.props.onCancel} className="col-sm-3 text-warning">cancel</a>
                         <input type="submit" value="Register Account" className="btn btn-default col-sm-6 col-sm-offset-3" /></div>
                 </form>
             </div>
@@ -948,7 +952,7 @@ class LoggedOutComponent extends React.Component {
         var account = this.state.account;
         let amzn = window.amazon;
         return (
-            <div className="loggedOut col-sm-4 col-sm-offset-4">
+            <div className="loggedOut col-sm-4 col-sm-offset-4" row>
 
                 { !this.state.showRegistration ? <form className="row">
 
