@@ -865,6 +865,7 @@ class LoggedInComponent extends React.Component {
         nav: 'clusters'
     };
     this.navClick = this.navClick.bind(this);
+    this.isActiveClass = this.isActiveClass.bind(this);
 
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
@@ -881,6 +882,10 @@ class LoggedInComponent extends React.Component {
     }
   }
 
+  isActiveClass(name) {
+    return this.state.nav === name ? 'active' : null;
+  }
+
   render() {
     // console.debug('user.props', this.props.user);
     return (
@@ -889,8 +894,8 @@ class LoggedInComponent extends React.Component {
 
             <nav>
                 <ul className="nav nav-pills">
-                    <li><a href="#" onClick={this.navClick('clusters')}>Clusters</a></li>
-                    <li><a href="#" onClick={this.navClick('tasks')}>Tasks</a></li>
+                    <li className={this.isActiveClass('clusters')}><a href="#" onClick={this.navClick('clusters')}>Clusters</a></li>
+                    <li className={this.isActiveClass('tasks')}><a href="#" onClick={this.navClick('tasks')}>Tasks</a></li>
                 </ul>
             </nav>
 
