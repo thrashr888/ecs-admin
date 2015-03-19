@@ -335,6 +335,7 @@ window.onAmazonLoginReady = function(cb) {
         if (cb) cb();
     });
 };
+setTimeout(onAmazonLoginReady, 25);
 
 //
 // APP
@@ -794,21 +795,19 @@ class ClusterSectionComponent extends React.Component {
 
     render() {
         // console.debug('user.clusters', this.props.clusters);
-        var clusters = this.props.clusters.map(function (cluster) {
-            return <ClusterComponent cluster={cluster}></ClusterComponent>
-        });
         return (
             <section>
                 <h2>Clusters</h2>
-                <p><button onClick={this.createCluster}>Create Cluster</button></p>
+                <p><button onClick={this.createCluster} className="btn">Create Cluster</button></p>
 
                 <nav>
-                    <ul className="nav nav-pills nav-stacked">{
-                        this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>)
-                    }</ul>
+                    <ul className="nav nav-pills nav-stacked">
+                        { this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>) }
+                    </ul>
                 </nav>
 
-                { clusters }
+                { this.props.clusters.map(cluster => <ClusterComponent cluster={cluster}></ClusterComponent>) }
+
                 <a href="#">top</a>
             </section>
         );
@@ -819,7 +818,13 @@ class HeaderComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.state = {
+        dropdownOpen: false
+    };
     this.logoutClick = this.logoutClick.bind(this);
+    this.dropdownToggle = this.dropdownToggle.bind(this);
+    this.isActiveClass = this.isActiveClass.bind(this);
 
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(added) {
@@ -834,15 +839,48 @@ class HeaderComponent extends React.Component {
     localStorage.removeItem('amazon_oauth_access_token');
   }
 
+  dropdownToggle() {
+    this.setState({
+        dropdownOpen: this.state.dropdownOpen ? false : true
+    });
+  }
+
+  isActiveClass(name) {
+    return this.props.nav === name ? 'active' : null;
+  }
+
     render() {
         return (
-            <header>
-                <p><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></p>
-                { this.props.user.fetching ? <p>Loading...</p> : null }
-                <div className="page-header">
-                    <h1>{this.props.user.profile.Name}</h1>
+            <nav className="navbar navbar-default">
+                <div className="container-fluid">
+                    <div className="navbar-header">
+                        <a className="navbar-brand" href="#">ECS Admin</a>
+                    </div>
+
+                    <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                        <ul className="nav navbar-nav">
+                            <li className={this.isActiveClass('clusters')}><a href="#" onClick={this.props.onNavClick('clusters')}>Clusters</a></li>
+                            <li className={this.isActiveClass('tasks')}><a href="#" onClick={this.props.onNavClick('tasks')}>Tasks</a></li>
+                        </ul>
+
+                        <ul className="nav navbar-nav navbar-right">
+
+                            { this.props.user.fetching ? <li className="navbar-text">Loading...</li> : null }
+
+                            <li className={'dropdown' + (this.state.dropdownOpen ? ' open ' : null)}>
+                                <a href="#" className="dropdown-toggle" onClick={this.dropdownToggle} data-toggle="dropdown" role="button" aria-expanded={this.state.dropdownOpen?'true':'false'}>{this.props.user.profile.Name} <span className="caret"></span></a>
+
+                                <ul className="dropdown-menu" role="menu">
+                                    <li className="dropdown-header">{Config.accountName}</li>
+                                    <li className="dropdown-header"><div>{Config.region}</div></li>
+                                    <li className="divider"></li>
+                                    <li><a href="#" id="Logout" onClick={this.logoutClick}>Logout</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </header>
+            </nav>
         );
     }
 };
@@ -890,14 +928,7 @@ class LoggedInComponent extends React.Component {
     // console.debug('user.props', this.props.user);
     return (
         <div className="user row col-sm-10 col-sm-offset-1">
-            <HeaderComponent user={this.props.user} />
-
-            <nav>
-                <ul className="nav nav-pills">
-                    <li className={this.isActiveClass('clusters')}><a href="#" onClick={this.navClick('clusters')}>Clusters</a></li>
-                    <li className={this.isActiveClass('tasks')}><a href="#" onClick={this.navClick('tasks')}>Tasks</a></li>
-                </ul>
-            </nav>
+            <HeaderComponent user={this.props.user} nav={this.state.nav} onNavClick={this.navClick} />
 
             { this.props.user.families && this.state.nav === 'tasks' ? <TaskDefinitionSectionComponent families={this.props.user.families} /> : null }
 
@@ -1013,6 +1044,7 @@ class LoggedOutComponent extends React.Component {
             return;
         }
         localStorage.setItem('amazon_oauth_access_token', response.access_token);
+        console.debug('loginClick.response.access_token', response.access_token)
         retrieveProfile(response.access_token);
     });
   }

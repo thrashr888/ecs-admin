@@ -55,7 +55,7 @@ TODO
 - put data in level-js
 - try out mesos chronos and marathon for scheduling
 - connect to the agent for polling updates?
-- show mapped EC2 instances
++ show mapped EC2 instances
 - make UI paned horiz from left to right?
     - [clusters] [task definitions] [container instances [EC2 instances] [tasks]]
 + use S3 to map a domain to a clientid and identityPoolId

@@ -1,6 +1,8 @@
 'use strict';
 
 var gulp = require('gulp');
+var browserSync = require('browser-sync');
+var reload      = browserSync.reload;
 
 // Load plugins
 var $ = require('gulp-load-plugins')();
@@ -44,7 +46,9 @@ gulp.task('styles', function () {
             .pipe($.autoprefixer('last 1 version'))
         .pipe($.sourcemaps.write())
         .pipe(gulp.dest('dist/styles'))
-        .pipe($.size());
+        .pipe($.size())
+        // .pipe($.filter('**/*.css')) // Filtering stream to only css files
+        .pipe(reload({stream: true}));
 });
 
 
@@ -83,7 +87,8 @@ gulp.task('scripts', function () {
             // .pipe($.jshint('.jshintrc')) // too slow
             // .pipe($.jshint.reporter('default'))
             .pipe(gulp.dest('dist/scripts'))
-            .pipe($.size());
+            .pipe($.size())
+            .pipe(reload({stream: true}));
     } catch (e) {
         console.error(e);
     }
@@ -99,7 +104,7 @@ gulp.task('html', function () {
         .pipe(assets.restore())
         .pipe($.useref())
         .pipe(gulp.dest('dist'))
-        .pipe($.connect.reload());
+        .pipe(reload({stream: true}));
 });
 
 
@@ -112,7 +117,8 @@ gulp.task('images', function () {
             interlaced: true
         })))
         .pipe(gulp.dest('dist/images'))
-        .pipe($.size());
+        .pipe($.size())
+        .pipe(reload({stream: true}));
 });
 
 
@@ -154,13 +160,20 @@ gulp.task('default', ['clean'], function () {
 });
 
 
+// Static server
 // Express Server
 gulp.task('server', function() {
     process.env.DEBUG = 'server';
-    $.nodemon({ script: 'server.js' })
-        .on('restart', function () {
-            console.log('restarted!')
-        })
+    browserSync({
+        server: {
+            baseDir: "dist",
+            index: "index.html"
+        },
+        https: true,
+        port: 8080,
+        logLevel: "info",
+        open: false,
+    });
 });
 
 
