@@ -65,7 +65,9 @@ gulp.task('scripts', function () {
                     // ['babelify', {'experimental': true}],
                     // ['babelify'],
                     require('babelify').configure({
-                      experimental: true
+                        extensions: [".jsx", ".es6"],
+                        only: ["scripts"],
+                        experimental: true
                     }),
                     ['reactify', {es6: true}],
                     ['envify', {

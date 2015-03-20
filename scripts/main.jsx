@@ -18,7 +18,7 @@ var Config = {
     env: process.env.BUILD_ENV,
     hostname: process.env.ECSADMIN_HOST_NAME,
     bucketName: process.env.ECSADMIN_BUCKET_NAME,
-    accountName: localStorage.getItem('accountName') || process.env.ECSADMIN_ACCOUNT_NAME,
+    accountName: localStorage.getItem('accountName') || process.env.ECSADMIN_ACCOUNT_NAME || '',
     region: process.env.ECSADMIN_REGION || 'us-east-1',
     identityPoolId: null,
     clientId: null,
@@ -30,6 +30,10 @@ var user = {};
 var ecs;
 var s3;
 var ec2;
+
+if (!Config.bucketName) {
+    user.warning = 'No bucket name set.';
+}
 
 // just testing
 // var db2 = new PouchDB('ecs-admin');
@@ -748,7 +752,8 @@ class TaskDefinitionSectionComponent extends React.Component {
             <section>
                 <h2>Task Definitions</h2>
 
-                <p><a href="#" onClick={this.toggleRegisterTaskModal}>Register Task Definition ▼</a></p>
+                <p><button onClick={this.toggleRegisterTaskModal} className="btn btn-default">Register Task Definition</button></p>
+
                 { this.state.registerTaskModal ? <div>
                     <h3>Register a Task</h3>
                     <textarea rows="20" cols="120" value={registerTaskText} onChange={this.registerTaskTextChange}></textarea>
@@ -798,10 +803,11 @@ class ClusterSectionComponent extends React.Component {
         return (
             <section>
                 <h2>Clusters</h2>
-                <p><button onClick={this.createCluster} className="btn">Create Cluster</button></p>
+                <p><button onClick={this.createCluster} className="btn btn-default">Create Cluster</button></p>
 
                 <nav>
                     <ul className="nav nav-pills nav-stacked">
+                        // TODO make this a dropdown in a menu with the create cluster button
                         { this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>) }
                     </ul>
                 </nav>
@@ -1063,7 +1069,7 @@ class LoggedOutComponent extends React.Component {
         var account = this.state.account;
         let amzn = window.amazon;
         return (
-            <div className="loggedOut col-sm-4 col-sm-offset-4" row>
+            <div className="loggedOut col-sm-4 col-sm-offset-4 row">
 
                 { !this.state.showRegistration ? <form className="row">
 
@@ -1112,7 +1118,13 @@ class PageComponent extends React.Component {
     render() {
         return (
             <div className="page container">
-                { this.props.user.profile ? <LoggedInComponent user={this.props.user} /> : <LoggedOutComponent /> }
+                {
+                    this.props.warning ?
+                        <p className="text-warning">Warning: {this.props.user.warning}</p> :
+                        (this.props.user.profile ?
+                            <LoggedInComponent user={this.props.user} /> :
+                            <LoggedOutComponent user={this.props.user} />)
+                }
             </div>
         );
     }
