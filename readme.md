@@ -1,3 +1,6 @@
+AWS Elastic Container Service Admin
+===================================
+
 
 Setup
 -----
@@ -10,8 +13,8 @@ Setup
 - Create an S3 bucket
 
 
-Build
------
+Install
+-------
 
     
     > npm install
@@ -21,19 +24,20 @@ Build
 Run
 ---
 
-You can run the node server directly:
+You can use the gulp task:
+
+    > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
+    > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
+    > export ECSADMIN_ACCOUNT_NAME=testaccount
+    > gulp watch
+
+Or you can run the node server directly (after a `gulp build`):
 
     // Homebrew's io.js
     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server /usr/local/Cellar/iojs/1.5.1/bin/iojs server.js
     // or NodeJS
     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server node server.js
 
-Or you can use the gulp task:
-
-    > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
-    > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
-    > export ECSADMIN_ACCOUNT_NAME=testaccount
-    > gulp watch
 
 Deploy
 ------
@@ -46,6 +50,42 @@ Deploy
     > S3_BUCKET=thrashr888-ecs-admin 
     > gulp deploy
 
+
+Required Policy Permissions
+---------------------------
+
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ecs:CreateCluster",
+                    "ecs:DeleteCluster",
+                    "ecs:ListClusters",
+                    "ecs:DescribeClusters",
+                    "ecs:ListTasks",
+                    "ecs:DescribeTasks",
+                    "ecs:ListTaskDefinitionFamilies",
+                    "ecs:ListTaskDefinitions",
+                    "ecs:DescribeTaskDefinition",
+                    "ecs:ListContainerInstances",
+                    "ecs:DescribeContainerInstances",
+                    "ecs:RegisterContainerInstance",
+                    "ecs:DeregisterContainerInstance",
+                    "ecs:DiscoverPollEndpoint",
+                    "ecs:Submit*",
+                    "ecs:Poll",
+                    "ec2:DescribeInstances"
+                ],
+                "Resource": [
+                    "*"
+                ]
+            }
+        ]
+    }
+
+
 TODO
 ----
 
@@ -54,6 +94,8 @@ TODO
 - list-tasks polling
 - put data in level-js
 - try out mesos chronos and marathon for scheduling
+- Container Instance setup script? Use Packer?
+- Document the AWS setup
 + connect to the agent for polling updates? # no, that's for on the ec2 servers
 + show mapped EC2 instances
 - look like [this](https://www.gosquared.com/blog/reinvent-2014-ec2-container-service-demo)

@@ -16,6 +16,7 @@ var onError = function (err) {
 
 
 gulp.task('set-production', function () {
+    process.env.ECSADMIN_HOST_NAME = '.';
     process.env.BUILD_ENV = 'production';
 });
 gulp.task('set-development', function () {
@@ -93,6 +94,7 @@ gulp.task('scripts', function () {
             .pipe(reload({stream: true}));
     } catch (e) {
         console.error(e);
+        return gulp;
     }
 });
 

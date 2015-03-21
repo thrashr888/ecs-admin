@@ -341,6 +341,37 @@ window.onAmazonLoginReady = function(cb) {
 };
 setTimeout(onAmazonLoginReady, 25);
 
+var policyPermissions = `{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecs:CreateCluster",
+                "ecs:DeleteCluster",
+                "ecs:ListClusters",
+                "ecs:DescribeClusters",
+                "ecs:ListTasks",
+                "ecs:DescribeTasks",
+                "ecs:ListTaskDefinitionFamilies",
+                "ecs:ListTaskDefinitions",
+                "ecs:DescribeTaskDefinition",
+                "ecs:ListContainerInstances",
+                "ecs:DescribeContainerInstances",
+                "ecs:RegisterContainerInstance",
+                "ecs:DeregisterContainerInstance",
+                "ecs:DiscoverPollEndpoint",
+                "ecs:Submit*",
+                "ecs:Poll",
+                "ec2:DescribeInstances"
+            ],
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}`;
+
 //
 // APP
 //
@@ -413,9 +444,8 @@ class InstanceReservationComponent extends React.Component {
         console.debug('instanceReservation.props', this.props)
         return (
             <div className="instance-reservation">
-                <h3>Instance Reservation {this.props.instance.ReservationId}</h3>
-
                 <ul className="list-group">
+                    <li className="list-group-item"><b>Reservation Id:</b> {this.props.instance.ReservationId}</li>
                     <li className="list-group-item"><b>Owner Id:</b> {this.props.instance.OwnerId}</li>
                     <li className="list-group-item"><b>Groups:</b> {this.props.instance.Groups ? this.props.instance.Groups.join(', ') : 'None'}</li>
                     <li className="list-group-item"><h3>Instances:</h3> {
@@ -448,8 +478,6 @@ class ContainerInstanceComponent extends React.Component {
   	});
     return (
         <div className="container-instance">
-            <h3>Container Instance {this.props.containerInstance.containerInstanceArn.replace(/(.*\/)[0-9A-Z\-]+/, '')}</h3>
-
         	<ul className="list-group">
         		<li className="list-group-item"><b>Arn:</b> {this.props.containerInstance.containerInstanceArn}</li>
         		<li className="list-group-item"><b>Agent Connected:</b> {this.props.containerInstance.agentConnected ? 'YES' : 'NO'}</li>
@@ -512,8 +540,6 @@ class TaskComponent extends React.Component {
   	// console.debug('task.props', this.props.task);
     return (
         <div className="task">
-        	<h3>Task</h3>
-        	<p><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.startTask}>Stop Task</a> : null }</p>
         	<ul className="list-group">
         		<li className="list-group-item"><b>Task Definition:</b> {this.props.task.taskDefinitionArn}</li>
         		<li className="list-group-item"><b>Container Instance:</b> {this.props.task.containerInstanceArn}</li>
@@ -522,6 +548,7 @@ class TaskComponent extends React.Component {
 
         		<li className="list-group-item"><b>Containers:</b> {this.props.task.containers.map(o => o.name)}</li>
         		<li className="list-group-item"><b>Overrides:</b> {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
+                <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.startTask}>Stop Task</a> : null }</li>
         	</ul>
         </div>
     );
@@ -633,6 +660,10 @@ class ClusterComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.state = {
+        activeSection: 'tasks'
+    };
     this.deleteCluster = this.deleteCluster.bind(this);
 
     let self = this;
@@ -657,29 +688,42 @@ class ClusterComponent extends React.Component {
   	}
   }
 
+  setActiveSection(name) {
+    let self = this;
+    return function(event) {
+        event.preventDefault();
+        self.setState({
+            activeSection: name
+        });
+    }
+  }
+
   render() {
   	// console.debug('cluster.props', this.props.cluster);
     return (
     	<div className="cluster">
-            <a name={'c-' + this.props.cluster.clusterName} />
-			<h2>Cluster: { this.props.cluster.clusterName } { this.props.cluster.status }</h2>
+			<h2>{ this.props.cluster.clusterName } <small>{ this.props.cluster.status }</small></h2>
+            <p><a href="#" onClick={this.deleteCluster}>Delete cluster</a></p>
 
-            <section>
-                <h3>Tasks</h3>
+            <ul className="nav nav-tabs">
+                <li role="presentation" className={ this.state.activeSection === 'tasks' ? 'active' : null}><a href="#" onClick={this.setActiveSection('tasks')}>Tasks</a></li>
+                <li role="presentation" className={ this.state.activeSection === 'containerInstances' ? 'active' : null}><a href="#" onClick={this.setActiveSection('containerInstances')}>Container Instances</a></li>
+                <li role="presentation" className={ this.state.activeSection === 'instances' ? 'active' : null}><a href="#" onClick={this.setActiveSection('instances')}>Instances</a></li>
+            </ul>
+
+            <br />
+
+            { this.state.activeSection === 'tasks' ? <section>
                 { this.props.cluster.tasks.map(task => <TaskComponent task={task} cluster={this.props.cluster} /> ) }
-            </section>
+            </section> : null }
 
-            <section>
-                <h3>Container Instances</h3>
+            { this.state.activeSection === 'containerInstances' ? <section>
                 { this.props.cluster.containerInstances.map(containerInstance => <ContainerInstanceComponent containerInstance={containerInstance} cluster={this.props.cluster} /> ) }
-            </section>
+            </section> : null }
 
-            <section>
-                <h3>Instances</h3>
+            { this.state.activeSection === 'instances' ? <section>
                 { this.props.cluster.instances.map(instance => <InstanceReservationComponent instance={instance} cluster={this.props.cluster} /> ) }
-            </section>
-
-			<a href="#" onClick={this.deleteCluster}>Delete cluster</a>
+            </section> : null }
 		</div>
     );
   }
@@ -698,12 +742,16 @@ class TaskDefinitionSectionComponent extends React.Component {
     super(props);
     this.state = {
         registerTaskModal: false,
-        registerTaskText: null
-    };
+        registerTaskText: null,
+        activeFamily: 0,
+        familyDropdownOpen: false
+    }
     this.registerTaskTextChange = this.registerTaskTextChange.bind(this);
     this.registerTaskDefinition = this.registerTaskDefinition.bind(this);
     this.toggleRegisterTaskModal = this.toggleRegisterTaskModal.bind(this);
     this.closeRegisterTaskModal = this.closeRegisterTaskModal.bind(this);
+    this.setActiveFamily = this.setActiveFamily.bind(this);
+    this.toggleFamilyDropdown = this.toggleFamilyDropdown.bind(this);
 
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.families)).open(function(added) {
@@ -742,33 +790,50 @@ class TaskDefinitionSectionComponent extends React.Component {
     event.preventDefault();
   }
 
+    setActiveFamily(key) {
+        let self = this;
+        return function (event) {
+            event.preventDefault();
+            self.setState({
+                activeFamily: key,
+                familyDropdownOpen: false
+            });
+        }
+    }
+
+    toggleFamilyDropdown() {
+        this.setState({
+            familyDropdownOpen: !this.state.familyDropdownOpen
+        });
+    }
+
     render() {
         // console.debug('user.families', this.props.families);
-        var families = this.props.families.map(function (family) {
-            return <FamilyComponent family={family}></FamilyComponent>
-        });
+        var activeFamily = this.props.families[this.state.activeFamily];
         var registerTaskText = this.state.registerTaskText;
         return (
             <section>
-                <h2>Task Definitions</h2>
-
-                <p><button onClick={this.toggleRegisterTaskModal} className="btn btn-default">Register Task Definition</button></p>
+                <nav>
+                    <ul className="nav nav-pills">
+                        <li role="presentation" className={'dropdown ' + (this.state.familyDropdownOpen ? 'open' : null)}>
+                            <a className="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded={this.state.familyDropdownOpen ? "true" : "false"} onClick={this.toggleFamilyDropdown}>
+                                {activeFamily ? activeFamily.familyName : null} <span className="caret"></span>
+                            </a>
+                            <ul className="dropdown-menu" role="menu">
+                                { this.props.families.map((family, key) => <li className={this.state.activeFamily === key ? 'active' : null}><a href="#" onClick={this.setActiveFamily(key)}>{family.familyName}</a></li>) }
+                            </ul>
+                        </li>
+                        <li><a href="#" onClick={this.toggleRegisterTaskModal} className="active" role="presentation">Register Task Definition</a></li>
+                    </ul>
+                </nav>
 
                 { this.state.registerTaskModal ? <div>
                     <h3>Register a Task</h3>
                     <textarea rows="20" cols="120" value={registerTaskText} onChange={this.registerTaskTextChange}></textarea>
-                    <p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> | <button onClick={this.registerTaskDefinition}>Register Task</button></p>
+                    <p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> &nbsp; <button onClick={this.registerTaskDefinition} className="btn btn-primary">Register Task</button></p>
                 </div> : null }
 
-                <nav>
-                    <ul className="nav nav-pills nav-stacked">{
-                        this.props.families.map((family) => <li><a href={'#f-' + family.name}>{family.name}</a></li>)
-                    }</ul>
-                </nav>
-
-                { families }
-
-                <a href="#">top</a>
+                <FamilyComponent family={activeFamily}></FamilyComponent>
             </section>
         );
     }
@@ -779,7 +844,13 @@ class ClusterSectionComponent extends React.Component {
   constructor(props) {
     super(props);
 
+    this.state = {
+        activeCluster: 0,
+        clusterDropdownOpen: false
+    }
     this.createCluster = this.createCluster.bind(this);
+    this.setActiveCluster = this.setActiveCluster.bind(this);
+    this.toggleClusterDropdown = this.toggleClusterDropdown.bind(this);
 
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.clusters)).open(function(added) {
@@ -787,8 +858,9 @@ class ClusterSectionComponent extends React.Component {
     });
   }
 
-  createCluster() {
-    var clusterName = prompt('The name of your cluster. If you do not specify a name for your cluster, you will create a cluster named default.');
+  createCluster(event) {
+    event.preventDefault();
+    let clusterName = prompt('The name of your cluster. If you do not specify a name for your cluster, you will create a cluster named default.');
     ecs.createCluster({
         clusterName: clusterName
     }, function (err, data) {
@@ -798,26 +870,49 @@ class ClusterSectionComponent extends React.Component {
     });
   }
 
+  setActiveCluster(key) {
+    let self = this;
+    return function (event) {
+        event.preventDefault();
+        self.setState({
+            activeCluster: key,
+            clusterDropdownOpen: false
+        });
+    }
+  }
+
+  toggleClusterDropdown() {
+    this.setState({
+        clusterDropdownOpen: !this.state.clusterDropdownOpen
+    });
+  }
+
     render() {
         // console.debug('user.clusters', this.props.clusters);
+        var activeCluster = this.props.clusters[this.state.activeCluster];
         return (
             <section>
-                <h2>Clusters</h2>
-                <p><button onClick={this.createCluster} className="btn btn-default">Create Cluster</button></p>
-
                 <nav>
-                    <ul className="nav nav-pills nav-stacked">
-                        // TODO make this a dropdown in a menu with the create cluster button
-                        { this.props.clusters.map((cluster) => <li><a href={'#c-' + cluster.clusterName}>{cluster.clusterName}</a></li>) }
+                    <ul className="nav nav-pills">
+                        <li role="presentation" className={'dropdown ' + (this.state.clusterDropdownOpen ? 'open' : null)}>
+                            <a className="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded={this.state.clusterDropdownOpen ? "true" : "false"} onClick={this.toggleClusterDropdown}>
+                                {activeCluster ? activeCluster.clusterName : null} <span className="caret"></span>
+                            </a>
+                            <ul className="dropdown-menu" role="menu">
+                                { this.props.clusters.map((cluster, key) => <li className={this.state.activeCluster === key ? 'active' : null}><a href="#" onClick={this.setActiveCluster(key)}>{cluster.clusterName}</a></li>) }
+                            </ul>
+                        </li>
+                        <li><a href="#" onClick={this.createCluster} className="active" role="presentation">Create Cluster</a></li>
                     </ul>
                 </nav>
 
-                { this.props.clusters.map(cluster => <ClusterComponent cluster={cluster}></ClusterComponent>) }
-
-                <a href="#">top</a>
+                <ClusterComponent cluster={activeCluster}></ClusterComponent>
             </section>
         );
     }
+};
+ContainerInstanceComponent.propTypes = {
+    clusters: React.PropTypes.array.isRequired
 };
 
 class HeaderComponent extends React.Component {
@@ -873,7 +968,7 @@ class HeaderComponent extends React.Component {
 
                             { this.props.user.fetching ? <li className="navbar-text">Loading...</li> : null }
 
-                            <li className={'dropdown' + (this.state.dropdownOpen ? ' open ' : null)}>
+                            <li className={'dropdown ' + (this.state.dropdownOpen ? 'open' : null)}>
                                 <a href="#" className="dropdown-toggle" onClick={this.dropdownToggle} data-toggle="dropdown" role="button" aria-expanded={this.state.dropdownOpen?'true':'false'}>{this.props.user.profile.Name} <span className="caret"></span></a>
 
                                 <ul className="dropdown-menu" role="menu">
@@ -895,7 +990,10 @@ class FooterComponent extends React.Component {
 
     render() {
         return (
-            <footer>&copy; 2015 Paul Thrasher</footer>
+            <footer>
+                <hr />
+                <p>&copy; 2015 Paul Thrasher</p>
+            </footer>
         );
     }
 };
@@ -909,7 +1007,6 @@ class LoggedInComponent extends React.Component {
         nav: 'clusters'
     };
     this.navClick = this.navClick.bind(this);
-    this.isActiveClass = this.isActiveClass.bind(this);
 
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.user)).open(function(changes) {
@@ -924,10 +1021,6 @@ class LoggedInComponent extends React.Component {
             nav: name
         });
     }
-  }
-
-  isActiveClass(name) {
-    return this.state.nav === name ? 'active' : null;
   }
 
   render() {
@@ -980,7 +1073,14 @@ class RegisterComponent extends React.Component {
         console.log('changehandler', event)
     }
 
+    selectPolicyPermissions(event) {
+        event.target.select();
+    }
+
     render() {
+        let textareaStyle = {
+            width: '100%'
+        }
         return (
             <div className="row">
                 <div className="page-header">
@@ -990,6 +1090,13 @@ class RegisterComponent extends React.Component {
                 { this.state.message ? <div>{this.state.message}</div> : null }
 
                 <form onChange={this.onFormChange} onSubmit={this.submitHandler}>
+                    <p>Register your <a href="http://login.amazon.com/website">Amazon Application</a> on this server to log in. You will then be able to log in with
+                        Amazon users accociated with that application, given they have the appropriate policy permissions. See
+                        the <a href="http://docs.aws.amazon.com/AmazonECS/latest/developerguide/IAM_policies.html">Amazon ECS IAM Policies Guide</a> for
+                        more information. You will need extra policy permissions, see here:</p>
+
+                    <textarea rows="3" value={policyPermissions} style={textareaStyle} onClick={this.selectPolicyPermissions}></textarea>
+
                     <div className="form-group">
                         <label htmlFor="accountName">Account Name</label>
                         <input type="text" className="form-control" id="accountName" placeholder="Enter account name" value={this.state.accountName} onChange={this.changeHandler} />
@@ -1021,6 +1128,7 @@ class LoggedOutComponent extends React.Component {
     this.state = {
         account: Config.accountName,
         showRegistration: false,
+        amazonReady: false
     };
     this.updateAccount = this.updateAccount.bind(this);
     this.loginClick = this.loginClick.bind(this);
@@ -1032,6 +1140,17 @@ class LoggedOutComponent extends React.Component {
     //     console.log('boo window')
     //     if (added.amazon) self.forceUpdate();
     // });
+
+    let self = this;
+    let timeout = setTimeout(function () {
+        if (window.amazon) {
+            self.setState({
+                amazonReady: true
+            });
+        } else {
+            clearTimeout(timeout);
+        }
+    }, 250);
   }
 
   updateAccount(event) {
@@ -1050,7 +1169,7 @@ class LoggedOutComponent extends React.Component {
             return;
         }
         localStorage.setItem('amazon_oauth_access_token', response.access_token);
-        console.debug('loginClick.response.access_token', response.access_token)
+        // console.debug('loginClick.response.access_token', response.access_token)
         retrieveProfile(response.access_token);
     });
   }
@@ -1067,30 +1186,35 @@ class LoggedOutComponent extends React.Component {
 
     render() {
         var account = this.state.account;
-        let amzn = window.amazon;
         return (
             <div className="loggedOut col-sm-4 col-sm-offset-4 row">
 
                 { !this.state.showRegistration ? <form className="row">
 
-                    <div className="page-header">
-                        <h1>Log in</h1>
-                    </div>
+                    { !this.state.amazonReady ? <div>Loading...</div> :
 
-                    { typeof amzn !== 'undefined' ? <p>Amazon not ready yet.</p> : null }
+                        <div className="login">
+                            <div className="page-header">
+                                <h1>Log in</h1>
+                            </div>
 
-                    <div className="form-group">
-                        <label htmlFor="accountName">Account Name</label>
-                        <input type="text" className="form-control" id="accountName" placeholder="Account Name" value={account} onChange={this.updateAccount} />
-                    </div>
+                            <p><b>WARNING:</b> Due to the use of advanced AWS APIs, this application only functions with <a href="https://blog.nraboy.com/2014/08/bypass-cors-errors-testing-apis-locally/">CORS turned off</a> in your browser.</p>
 
-                    <div className="form-group">
-                        <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
-                            <img border="0" alt="Login with Amazon"
-                            src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
-                            width="156" height="32" />
-                        </a>
-                    </div>
+                            <div className="form-group">
+                                <label htmlFor="accountName">Account Name</label>
+                                <input type="text" className="form-control" id="accountName" placeholder="Account Name" value={account} onChange={this.updateAccount} />
+                            </div>
+
+                            <div className="form-group">
+                                <a href="#" id="LoginWithAmazon" onClick={this.loginClick}>
+                                    <img border="0" alt="Login with Amazon"
+                                    src="https://images-na.ssl-images-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png"
+                                    width="156" height="32" />
+                                </a>
+                            </div>
+                        </div>
+
+                    }
 
                     <div>
                         <a href="#" onClick={this.showRegistrationModal}>Register an AWS Account</a>
