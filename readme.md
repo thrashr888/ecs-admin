@@ -17,9 +17,30 @@ Install
 -------
 
     
+    > git clone git://github.com/thrashr888/ecs-admin.git
+    > cd ecs-admin
     > npm install
     > bower install
 
+
+ECS Instance Setup with Terraform
+---------------------------------
+
+    > export AWS_ACCESS_KEY="<your-access-key>"
+    > export AWS_SECRET_KEY="<your-secret-key>"
+    > brew cask install terraform
+    > brew install awscli
+    > aws iam create-role --role-name AmazonECSContainerInstanceRole --assume-role-policy-document ./ecs-trust-policy.json
+    > aws iam put-role-policy --role-name AmazonECSContainerInstanceRole --policy-name AmazonECSContainerInstancePolicy --policy-document ./ecs-iam-policy.json
+    > aws ec2 create-key-pair --key-name containers > containers-key.json
+    > cat > terraform.tfvars <<EOT
+AWS_ACCESS_KEY="$AWS_ACCESS_KEY"
+AWS_SECRET_KEY="$AWS_SECRET_KEY"
+ECS_KEYPAIR_NAME="containers"
+ECS_COUNT=2
+EOT
+    > terraform plan
+    > terraform apply
 
 Run
 ---
@@ -51,41 +72,6 @@ Deploy
     > gulp deploy
 
 
-Required Policy Permissions
----------------------------
-
-    {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "ecs:CreateCluster",
-                    "ecs:DeleteCluster",
-                    "ecs:ListClusters",
-                    "ecs:DescribeClusters",
-                    "ecs:ListTasks",
-                    "ecs:DescribeTasks",
-                    "ecs:ListTaskDefinitionFamilies",
-                    "ecs:ListTaskDefinitions",
-                    "ecs:DescribeTaskDefinition",
-                    "ecs:ListContainerInstances",
-                    "ecs:DescribeContainerInstances",
-                    "ecs:RegisterContainerInstance",
-                    "ecs:DeregisterContainerInstance",
-                    "ecs:DiscoverPollEndpoint",
-                    "ecs:Submit*",
-                    "ecs:Poll",
-                    "ec2:DescribeInstances"
-                ],
-                "Resource": [
-                    "*"
-                ]
-            }
-        ]
-    }
-
-
 TODO
 ----
 
@@ -93,9 +79,11 @@ TODO
 + switch to ES6 syntax
 - list-tasks polling
 - put data in level-js
-- try out mesos chronos and marathon for scheduling
-- Container Instance setup script? Use Packer?
-- Document the AWS setup
+- try out mesos chronos and marathon for scheduling?
++ Container Instance setup script? Use Terraform?
++ Document the AWS setup
+- Automate all the possible pieces in scripts or terraform
+- Document it fully
 + connect to the agent for polling updates? # no, that's for on the ec2 servers
 + show mapped EC2 instances
 - look like [this](https://www.gosquared.com/blog/reinvent-2014-ec2-container-service-demo)
