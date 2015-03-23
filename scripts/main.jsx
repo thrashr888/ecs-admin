@@ -526,11 +526,12 @@ class TaskComponent extends React.Component {
   runTask() {
   	var count = prompt('The number of instances of the specified task that you would like to place on your cluster.');
   	ecs.runTask({
-  		task: this.props.task.taskDefinitionArn,
+  		taskDefinition: this.props.task.taskDefinitionArn,
   		cluster: this.props.cluster.clusterName,
   		count: count || 1
   	}, function (err, data) {
-		if(!err && confirm('Task started. Refresh the page?')) {
+        if (err) console.error(err);
+		if (!err && confirm('Task started. Refresh the page?')) {
 			window.location.reload();
 		}
   	});
@@ -538,6 +539,8 @@ class TaskComponent extends React.Component {
 
   render() {
   	// console.debug('task.props', this.props.task);
+    let containers = this.props.task.containers.map(c => c.name + ': ' + c.lastStatus).join(', ');
+    let containerOverrides = this.props.task.overrides.containerOverrides.map(o => Object.keys(o).map(k => k + ': ' + o[k])).join(', ');
     return (
         <div className="task">
         	<ul className="list-group">
@@ -546,8 +549,8 @@ class TaskComponent extends React.Component {
         		<li className="list-group-item"><b>Desired Status:</b> {this.props.task.desiredStatus}</li>
         		<li className="list-group-item"><b>Last Status:</b> {this.props.task.lastStatus}</li>
 
-        		<li className="list-group-item"><b>Containers:</b> {this.props.task.containers.map(o => o.name)}</li>
-        		<li className="list-group-item"><b>Overrides:</b> {this.props.task.overrides.containerOverrides.map(o => o.name)}</li>
+                <li className="list-group-item"><b>Overrides:</b> {containerOverrides}</li>
+        		<li className="list-group-item"><b>Containers:</b> {containers}</li>
                 <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.startTask}>Stop Task</a> : null }</li>
         	</ul>
         </div>
@@ -626,11 +629,28 @@ class TaskDefinitionComponent extends React.Component {
     constructor(props) {
         super(props);
 
+        this.runTask = this.runTask.bind(this);
+
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.taskDefinition)).open(function(changes) {
 			self.forceUpdate();
 		});
 	}
+
+  runTask() {
+    let clusterName = prompt('Which cluster do you want to use?');
+    let count = prompt('The number of instances of the specified task that you would like to place on your cluster.');
+    ecs.runTask({
+        taskDefinition: this.props.taskDefinition.taskDefinitionArn,
+        cluster: clusterName,
+        count: count || 1
+    }, function (err, data) {
+        if (err) console.error(err);
+        if (!err && confirm('Task started. Refresh the page?')) {
+            window.location.reload();
+        }
+    });
+  }
 
 	render() {
 	  	// console.debug('taskDefinition.props', this.props.taskDefinition);
@@ -650,6 +670,8 @@ class TaskDefinitionComponent extends React.Component {
 
 					<li className="list-group-item"><b>Volumes:</b> {this.props.taskDefinition.volumes ? this.props.taskDefinition.volumes.join(', ') : 'None'}</li>
 					<li className="list-group-item"><b>Container Definitions:</b> {containerDefinitions}</li>
+
+                    <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a></li>
 				</ul>
 			</div>
 		);

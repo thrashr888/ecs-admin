@@ -78,6 +78,8 @@ TODO
 + separate logged in and out components
 + switch to ES6 syntax
 - list-tasks polling
+- detect if CORS is enabled
+- inspect docker info with [docker-js](https://github.com/dgoujard/docker-js/)?
 - put data in level-js
 - try out mesos chronos and marathon for scheduling?
 + Container Instance setup script? Use Terraform?

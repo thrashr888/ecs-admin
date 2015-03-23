@@ -9,6 +9,7 @@
                 "ecs:ListClusters",
                 "ecs:DescribeClusters",
                 "ecs:ListTasks",
+                "ecs:RunTask",
                 "ecs:DescribeTasks",
                 "ecs:ListTaskDefinitionFamilies",
                 "ecs:ListTaskDefinitions",
