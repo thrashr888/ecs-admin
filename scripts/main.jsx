@@ -283,7 +283,12 @@ function onLogin (access_token) {
 		}
 	});
 
-	ecs = new AWS.ECS();
+ //    var ep = new AWS.Endpoint('localhost:8443');
+ //    ecs = new AWS.ECS({endpoint: ep});
+ //    ec2 = new AWS.EC2({endpoint: ep});
+ //    s3 = new AWS.S3();
+
+    ecs = new AWS.ECS();
     s3 = new AWS.S3();
     ec2 = new AWS.EC2();
 
@@ -391,38 +396,39 @@ class InstanceComponent extends React.Component {
         console.debug('instance.props', this.props)
         return (
             <div className="instance">
-                <h4>Instance {this.props.instance.InstanceId}</h4>
+                <h4>{this.props.instance.KeyName} ({this.props.instance.InstanceId})</h4>
+
                 <ul>
-                    <li><b>Ami Launch Index:</b> {this.props.instance.AmiLaunchIndex}</li>
                     <li><b>Architecture:</b> {this.props.instance.Architecture}</li>
-                    <li><b>Block Device Mappings:</b> {this.props.instance.BlockDeviceMappings}</li>
+                    <li><b>Block Device Mappings:</b> <ul>{this.props.instance.BlockDeviceMappings.map(m => <li>{m.DeviceName + ': ' + m.Ebs.VolumeId}</li>)}</ul></li>
                     <li><b>Client Token:</b> {this.props.instance.ClientToken}</li>
-                    <li><b>EBS Optimized:</b> {this.props.instance.EbsOptimized}</li>
+                    <li><b>EBS Optimized:</b> {this.props.instance.EbsOptimized ? 'Yes' : 'No'}</li>
                     <li><b>Hypervisor:</b> {this.props.instance.Hypervisor}</li>
-                    <li><b>IAM Instance Profile:</b> {this.props.instance.IamInstanceProfile}</li>
+                    <li><b>IAM Instance Profile:</b> {this.props.instance.IamInstanceProfile.Id} <i>({this.props.instance.IamInstanceProfile.Arn})</i></li>
                     <li><b>Image Id:</b> {this.props.instance.ImageId}</li>
                     <li><b>Instance Id:</b> {this.props.instance.InstanceId}</li>
                     <li><b>Instance Type:</b> {this.props.instance.InstanceType}</li>
                     <li><b>Key Name:</b> {this.props.instance.KeyName}</li>
                     <li><b>Launch Time:</b> {this.props.instance.LaunchTime}</li>
-                    <li><b>Monitoring:</b> {this.props.instance.Monitoring}</li>
-                    <li><b>Network Interfaces:</b> {this.props.instance.NetworkInterfaces}</li>
-                    <li><b>Placement:</b> {this.props.instance.Placement}</li>
+                    <li><b>Monitoring State:</b> {this.props.instance.Monitoring.State}</li>
+                    <li><b>Network Interfaces:</b> {this.props.instance.NetworkInterfaces.map(i => i).join(', ')}</li>
+                    <li><b>Placement:</b> {this.props.instance.Placement.AvailabilityZone}</li>
                     <li><b>Private DNS Name:</b> {this.props.instance.PrivateDnsName}</li>
                     <li><b>Private IP Address:</b> {this.props.instance.PrivateIpAddress}</li>
                     <li><b>Product Codes:</b> {this.props.instance.ProductCodes}</li>
-                    <li><b>Public DNS Name:</b> {this.props.instance.PublicDnsName}</li>
+                    <li><b>Public DNS Name:</b> <a href="http://{this.props.instance.PublicDnsName}" target="_blank">{this.props.instance.PublicDnsName}</a></li>
                     <li><b>Public IP Address:</b> {this.props.instance.PublicIpAddress}</li>
                     <li><b>Root Device Name:</b> {this.props.instance.RootDeviceName}</li>
                     <li><b>Root Device Type:</b> {this.props.instance.RootDeviceType}</li>
-                    <li><b>Security Groups:</b> {this.props.instance.SecurityGroups}</li>
-                    <li><b>Source Dest Check:</b> {this.props.instance.SourceDestCheck}</li>
-                    <li><b>State:</b> {this.props.instance.State}</li>
+                    <li><b>Security Groups:</b> <ul>{this.props.instance.SecurityGroups.map(g => <li><a href="https://console.aws.amazon.com/ec2/v2/home#SecurityGroups:search={g.GroupId};sort=groupId" target="_blank">{g.GroupName}</a></li>)}</ul></li>
+                    <li><b>Source Dest Check:</b> {this.props.instance.SourceDestCheck ? 'Yes' : 'No'}</li>
+                    <li><b>State:</b> {this.props.instance.State ? (this.props.instance.State.Name) : 'N/A'}</li>
+                    <li><b>State Reason:</b> {this.props.instance.StateReason ? (this.props.instance.StateReason.Message) : 'n/a'}</li>
                     <li><b>State Transition Reason:</b> {this.props.instance.StateTransitionReason}</li>
-                    <li><b>Subnet Id:</b> {this.props.instance.SubnetId}</li>
-                    <li><b>Tags:</b> {this.props.instance.Tags}</li>
+                    <li><b>Subnet:</b> {this.props.instance.SubnetId}</li>
+                    <li><b>Tags:</b> <ul>{this.props.instance.Tags.map(t => <li>{t.Key + ': ' + t.Value}</li>)}</ul></li>
                     <li><b>Virtualization Type:</b> {this.props.instance.VirtualizationType}</li>
-                    <li><b>VPC Id:</b> {this.props.instance.VpcId}</li>
+                    <li><b>VPC:</b> {this.props.instance.VpcId}</li>
                 </ul>
             </div>
         );
@@ -551,7 +557,7 @@ class TaskComponent extends React.Component {
 
                 <li className="list-group-item"><b>Overrides:</b> {containerOverrides}</li>
         		<li className="list-group-item"><b>Containers:</b> {containers}</li>
-                <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.startTask}>Stop Task</a> : null }</li>
+                <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a> | { this.props.task.lastStatus === 'RUNNING' ? <a href="#" onClick={this.stopTask}>Stop Task</a> : null }</li>
         	</ul>
         </div>
     );
@@ -576,7 +582,7 @@ class FamilyComponent extends React.Component {
 			taskDefinitions = this.props.family.taskDefinitionArns.map(function (taskDefinitionArn) {
 				// console.log('taskDefinitionArn.taskDefinition', taskDefinitionArn)
 				if (taskDefinitionArn.taskDefinition) {
-					return <TaskDefinitionComponent taskDefinition={taskDefinitionArn.taskDefinition} />
+					return <TaskDefinitionComponent taskDefinition={taskDefinitionArn.taskDefinition} clusters={self.props.clusters} />
 				} else {
 					(new ObserveJs.ObjectObserver(taskDefinitionArn)).open(function(changes) {
 						self.forceUpdate();
@@ -671,11 +677,41 @@ class TaskDefinitionComponent extends React.Component {
 					<li className="list-group-item"><b>Volumes:</b> {this.props.taskDefinition.volumes ? this.props.taskDefinition.volumes.join(', ') : 'None'}</li>
 					<li className="list-group-item"><b>Container Definitions:</b> {containerDefinitions}</li>
 
-                    <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a></li>
+                    <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a> <ClusterDropdown clusters={this.props.clusters} onChange={this.props.onClusterChange} value={this.state.activeCluster} /></li>
 				</ul>
 			</div>
 		);
 	}
+};
+
+class ClusterDropdown extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+        activeSection: null
+    };
+
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.clusters)).open(function(changes) {
+        self.forceUpdate();
+    });
+  }
+
+  render() {
+    console.debug('ClusterDropdown.clusters', this.props.clusters)
+    return (
+        <div>
+            <select value={this.state.activeSection} onChange={this.props.onChange}>
+                {this.props.clusters.map(c => <option>{c.Name}</option>)}
+            </select>
+        </div>
+    );
+  }
+}
+ClusterDropdown.defaultProps = {
+    clusters: []
 };
 
 class ClusterComponent extends React.Component {
@@ -748,7 +784,7 @@ class ClusterComponent extends React.Component {
             </section> : null }
 		</div>
     );
-  }
+}
 };
 ClusterComponent.defaultProps = {
     cluster: {
@@ -855,7 +891,7 @@ class TaskDefinitionSectionComponent extends React.Component {
                     <p><a href="#" onClick={this.closeRegisterTaskModal}>Cancel</a> &nbsp; <button onClick={this.registerTaskDefinition} className="btn btn-primary">Register Task</button></p>
                 </div> : null }
 
-                <FamilyComponent family={activeFamily}></FamilyComponent>
+                <FamilyComponent family={activeFamily} clusters={this.props.clusters}></FamilyComponent>
             </section>
         );
     }
@@ -1051,7 +1087,7 @@ class LoggedInComponent extends React.Component {
         <div className="user row col-sm-10 col-sm-offset-1">
             <HeaderComponent user={this.props.user} nav={this.state.nav} onNavClick={this.navClick} />
 
-            { this.props.user.families && this.state.nav === 'tasks' ? <TaskDefinitionSectionComponent families={this.props.user.families} /> : null }
+            { this.props.user.families && this.state.nav === 'tasks' ? <TaskDefinitionSectionComponent families={this.props.user.families} clusters={this.props.user.clusters} /> : null }
 
             { this.props.user.clusters && this.state.nav === 'clusters' ? <ClusterSectionComponent clusters={this.props.user.clusters} /> : null }
 

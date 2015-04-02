@@ -28,7 +28,9 @@
     "level-js": "^2.1.6",
     "mime-types": "^2.0.9",
     "pouchdb": "^3.3.1",
+    "proxy-agent": "^1.1.0",
     "react": "^0.13.0",
+    "react-bootstrap": "^0.19.0",
     "reflux": "^0.2.6",
     "spdy": "^1.31.0"
   },

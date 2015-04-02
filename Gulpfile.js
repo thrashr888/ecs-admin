@@ -168,7 +168,7 @@ gulp.task('default', ['clean'], function () {
 // Express Server
 gulp.task('server', function() {
     process.env.DEBUG = 'server';
-    browserSync({
+    browserSync.create().init({
         server: {
             baseDir: "dist",
             index: "index.html"
@@ -179,7 +179,58 @@ gulp.task('server', function() {
         open: false,
     });
 });
+// gulp.task('server2', function() {
+//     process.env.DEBUG = 'server';
+//     browserSync.create().init({
+//         server: {
+//             // With custom request headers - Requires v2.1.0
+//             proxy: {
+//                 target: "ecs.us-east-1.amazonaws.com:443",
+//                 middeware: function (req, res, next) {
+//                     console.log(req.url);
+//                     res.header("Access-Control-Allow-Origin", "*");
+//                     next();
+//                 },
+//                 reqHeaders: function (config) {
+//                     console.log('req.config', config)
+//                     return {
+//                         // "host":            config.urlObj.host,
+//                         // "accept-encoding": "identity",
+//                         // "agent":           false
+//                         "Access-Control-Allow-Origin": "*"
+//                     }
+//                 }
+//             }
+//         },
+//         https: true,
+//         port: 8081,
+//         logLevel: "info",
+//         open: false,
+//         ui: {
+//             port: 3002
+//         }
+//     });
+// });
 
+// gulp.task('server2', function(){
+//     var connect = require('gulp-connect');
+//     connect.server({
+//         root: ['dist'],
+//         port: 8081,
+//         https: true,
+//         livereload: false,
+//         middleware: function(connect, o) {
+//           return [ (function(req) {
+//             console.log('connect.req', req)
+//               var url = require('url');
+//               var proxy = require('proxy-middleware');
+//               var options = url.parse('ecs.us-east-1.amazonaws.com:443');
+//               // options.route = '/api';
+//               return proxy(options);
+//           })() ];
+//         }
+//     });
+// });
 
 // Watch
 gulp.task('watch', ['set-development', 'html', 'bundle', 'server'], function () {
@@ -192,7 +243,6 @@ gulp.task('watch', ['set-development', 'html', 'bundle', 'server'], function () 
 
     // Watch .jsx files
     gulp.watch('scripts/**/*.jsx', ['scripts']);
-
     // Watch .js files
     gulp.watch('scripts/**/*.js', ['scripts']);
 

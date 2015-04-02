@@ -59,6 +59,10 @@ Or you can run the node server directly (after a `gulp build`):
     // or NodeJS
     > HTTP2_LOG_DATA=1 HTTP2_LOG=trace DEBUG=server node server.js
 
+Open Chrome with CORS disabled:
+
+    > open -a Google\ Chrome --args --disable-web-security
+
 
 Deploy
 ------

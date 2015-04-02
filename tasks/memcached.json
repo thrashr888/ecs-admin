@@ -1,0 +1,12 @@
+{
+  "containerDefinitions": [
+    {
+      "image": "dockerfile/memcached:latest",
+      "name": "memcached",
+      "essential": true,
+      "memory": 500,
+      "cpu": 10
+    }
+  ],
+  "family": "memcached"
+}

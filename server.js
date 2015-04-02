@@ -93,7 +93,6 @@ server.listen(process.env.HTTP2_PORT || 8443);
 debug('Listening on port 8080 and 8443.');
 
 module.exports = {
-  app: app,
   server: server,
   scripts: scripts
 }

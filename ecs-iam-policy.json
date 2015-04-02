@@ -13,6 +13,7 @@
                 "ecs:DescribeTasks",
                 "ecs:ListTaskDefinitionFamilies",
                 "ecs:ListTaskDefinitions",
+                "ecs:RegisterTaskDefinition",
                 "ecs:DescribeTaskDefinition",
                 "ecs:ListContainerInstances",
                 "ecs:DescribeContainerInstances",
