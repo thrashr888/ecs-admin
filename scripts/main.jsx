@@ -10,6 +10,9 @@ var Immutable = require('immutable');
  window.PouchDB = require('pouchdb');
 // PouchDB.debug.enable('*');
 
+var Input = require('react-bootstrap').Input;
+var Table = require('react-bootstrap').Table;
+
 //
 // CONFIG
 //
@@ -66,6 +69,11 @@ function slugify(text)
     .replace(/\-\-+/g, '-')         // Replace multiple - with single -
     .replace(/^-+/, '')             // Trim - from start of text
     .replace(/-+$/, '');            // Trim - from end of text
+}
+
+function taskDefinitionArnToName(taskDefinitionArn)
+{
+    return taskDefinitionArn.replace(/(.*\/)[\w\:]+$/, '');
 }
 
 
@@ -206,6 +214,8 @@ function fetchData () {
 			user.clusters.forEach(function (cluster, i) {
                 user.clusters[i].containerInstanceArns = [];
                 user.clusters[i].containerInstances = [];
+                user.clusters[i].serviceArns = [];
+                user.clusters[i].services = [];
                 user.clusters[i].instances = [];
                 user.clusters[i].taskArns = [];
                 user.clusters[i].tasks = [];
@@ -232,7 +242,7 @@ function fetchData () {
                                     InstanceIds: data.containerInstances.map(containerInstance => containerInstance.ec2InstanceId)
                                 }, function(err, data) {
                                     user.fetching = false;
-                                    console.debug('instances.res', data)
+                                    // console.debug('instances.res', data)
                                     user.clusters[i].instances = data.Reservations;
                                 });
                             }
@@ -260,6 +270,27 @@ function fetchData () {
 						});
 					}
 				});
+
+                user.fetching = true;
+                ecs.listServices({
+                    cluster: cluster.clusterName
+                }, function (err, data) {
+                    user.fetching = false;
+                    // console.log('services.data', data, err)
+                    user.clusters[i].serviceArns = data.serviceArns;
+
+                    if (data.serviceArns.length > 0) {
+                        user.fetching = true;
+                        ecs.describeServices({
+                            cluster: cluster.clusterName,
+                            services: data.serviceArns
+                        }, function (err, data) {
+                            user.fetching = false;
+                            user.clusters[i].services = data.services;
+                            // console.debug(5, cluster.clusterName, user)
+                        });
+                    }
+                });
 			});
 		});
 	});
@@ -299,7 +330,7 @@ function onLogin (access_token) {
 	// }, 1000 * 15); // 15 sec
 }
 
-function registerAccount (bucketName, accountName, clientId, identityPoolId, cb) {
+function registerAccount (bucketName, accountName, clientId, identityPoolId, cb = null) {
     var params = {
         Bucket: bucketName,
         ACL: 'public-read',
@@ -330,7 +361,7 @@ function retrieveProfile (access_token) {
 		onLogin(access_token);
 	});
 }
-window.onAmazonLoginReady = function(cb) {
+window.onAmazonLoginReady = function(cb = null) {
     $.get(Config.hostname + '/accounts/' + slugify(Config.accountName) + '.json', function getResponse(res) {
         // console.debug('res', res)
         Config.identityPoolId = res.identityPoolId;
@@ -502,6 +533,48 @@ ContainerInstanceComponent.propTypes = {
     cluster: React.PropTypes.object
 };
 
+class ServiceComponent extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    let self = this;
+    (new ObserveJs.ObjectObserver(this.props.service)).open(function(changes) {
+        self.forceUpdate();
+    });
+  }
+
+  render() {
+    var deployments = this.props.service.deployments.map(function (dep) {
+        return <ul>
+            <li><b>Created At:</b> {dep.createdAt}</li>
+            <li><b>Desired Count:</b> {dep.desiredCount}</li>
+            <li><b>Id:</b> {dep.id}</li>
+            <li><b>Pending Count:</b> {dep.pendingCount}</li>
+            <li><b>Running Count:</b> {dep.runningCount}</li>
+            <li><b>Status:</b> {dep.status}</li>
+            <li><b>Task Definition:</b> {dep.taskDefinition}</li>
+            <li><b>Updated At:</b> {dep.updatedAt}</li>
+        </ul>
+    });
+    var events = this.props.service.events.map(function (ev) {
+        return <tr><td>{ev.id}:</td><td>{ev.message}</td><td>{ev.createdAt}</td></tr>
+    });
+    return (
+        <div className="service">
+            <ul className="list-group">
+                <li className="list-group-item"><b>Arn:</b> {this.props.service.serviceArn}</li>
+                <li className="list-group-item"><b>Load Balancers:</b> {this.props.service.loadBalancers ? this.props.service.loadBalancers : 'None'}</li>
+                <li className="list-group-item"><b>Desired Count:</b> {this.props.service.desiredCount}</li>
+                <li className="list-group-item"><b>Deployments:</b> {deployments}</li>
+                <li className="list-group-item"><b>Events:</b> <Table striped bordered condensed hover>{events}</Table></li>
+            </ul>
+        </div>
+        )
+  }
+
+}
+
 class TaskComponent extends React.Component {
 
   constructor(props) {
@@ -635,7 +708,12 @@ class TaskDefinitionComponent extends React.Component {
     constructor(props) {
         super(props);
 
+        this.state = {
+            activeCluster: this.props.clusters[0].clusterName
+        };
+
         this.runTask = this.runTask.bind(this);
+        this.onClusterChange = this.onClusterChange.bind(this);
 
 		let self = this;
 		(new ObserveJs.ObjectObserver(this.props.taskDefinition)).open(function(changes) {
@@ -643,18 +721,30 @@ class TaskDefinitionComponent extends React.Component {
 		});
 	}
 
-  runTask() {
-    let clusterName = prompt('Which cluster do you want to use?');
-    let count = prompt('The number of instances of the specified task that you would like to place on your cluster.');
+  runTask(event) {
+    event.preventDefault();
+
+    let taskDefinitionName = taskDefinitionArnToName(this.props.taskDefinition.taskDefinitionArn);
+    let count = prompt(`Using task "${this.props.taskDefinition.taskDefinitionArn}" on the ${this.state.activeCluster} cluster.\n\nHow many instances of the specified task would you like to place on your cluster?`, 1);
+    if (!count) return;
+
     ecs.runTask({
         taskDefinition: this.props.taskDefinition.taskDefinitionArn,
-        cluster: clusterName,
+        cluster: this.state.activeCluster,
         count: count || 1
     }, function (err, data) {
         if (err) console.error(err);
+        console.log('runTask', data)
         if (!err && confirm('Task started. Refresh the page?')) {
             window.location.reload();
         }
+    });
+  }
+
+  onClusterChange(event) {
+    // console.log('onClusterChange', event.target.value)
+    this.setState({
+        activeCluster: event.target.value
     });
   }
 
@@ -677,7 +767,7 @@ class TaskDefinitionComponent extends React.Component {
 					<li className="list-group-item"><b>Volumes:</b> {this.props.taskDefinition.volumes ? this.props.taskDefinition.volumes.join(', ') : 'None'}</li>
 					<li className="list-group-item"><b>Container Definitions:</b> {containerDefinitions}</li>
 
-                    <li className="list-group-item"><a href="#" onClick={this.runTask}>Run Task</a> <ClusterDropdown clusters={this.props.clusters} onChange={this.props.onClusterChange} value={this.state.activeCluster} /></li>
+                    <li className="list-group-item"><ClusterDropdown clusters={this.props.clusters} onChange={this.onClusterChange} value={this.state.activeCluster} /><button onClick={this.runTask}>Run Task</button></li>
 				</ul>
 			</div>
 		);
@@ -689,10 +779,6 @@ class ClusterDropdown extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-        activeSection: null
-    };
-
     let self = this;
     (new ObserveJs.ObjectObserver(this.props.clusters)).open(function(changes) {
         self.forceUpdate();
@@ -700,13 +786,13 @@ class ClusterDropdown extends React.Component {
   }
 
   render() {
-    console.debug('ClusterDropdown.clusters', this.props.clusters)
+    // console.debug('ClusterDropdown.clusters', this.props.clusters)
+    var { clusters, ...other } = this.props;
     return (
-        <div>
-            <select value={this.state.activeSection} onChange={this.props.onChange}>
-                {this.props.clusters.map(c => <option>{c.Name}</option>)}
-            </select>
-        </div>
+        <Input {...this.props} type="select" className="ClusterDropdown">
+            <option disabled>Cluster Name</option>
+            {this.props.clusters.map(c => <option value={c.clusterName}>{c.clusterName}</option>)}
+        </Input>
     );
   }
 }
@@ -720,7 +806,7 @@ class ClusterComponent extends React.Component {
     super(props);
 
     this.state = {
-        activeSection: 'tasks'
+        activeSection: 'services'
     };
     this.deleteCluster = this.deleteCluster.bind(this);
 
@@ -764,12 +850,17 @@ class ClusterComponent extends React.Component {
             <p><a href="#" onClick={this.deleteCluster}>Delete cluster</a></p>
 
             <ul className="nav nav-tabs">
+                <li role="presentation" className={ this.state.activeSection === 'services' ? 'active' : null}><a href="#" onClick={this.setActiveSection('services')}>Services</a></li>
                 <li role="presentation" className={ this.state.activeSection === 'tasks' ? 'active' : null}><a href="#" onClick={this.setActiveSection('tasks')}>Tasks</a></li>
                 <li role="presentation" className={ this.state.activeSection === 'containerInstances' ? 'active' : null}><a href="#" onClick={this.setActiveSection('containerInstances')}>Container Instances</a></li>
                 <li role="presentation" className={ this.state.activeSection === 'instances' ? 'active' : null}><a href="#" onClick={this.setActiveSection('instances')}>Instances</a></li>
             </ul>
 
             <br />
+
+            { this.state.activeSection === 'services' ? <section>
+                { this.props.cluster.services.map(service => <ServiceComponent service={service} cluster={this.props.cluster} /> ) }
+            </section> : null }
 
             { this.state.activeSection === 'tasks' ? <section>
                 { this.props.cluster.tasks.map(task => <TaskComponent task={task} cluster={this.props.cluster} /> ) }
@@ -788,6 +879,7 @@ class ClusterComponent extends React.Component {
 };
 ClusterComponent.defaultProps = {
     cluster: {
+        services: [],
         tasks: [],
         containerInstances: [],
         instances: [],

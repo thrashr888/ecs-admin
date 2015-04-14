@@ -15,7 +15,7 @@ provider "aws" {
 
 resource "aws_instance" "ecs" {
     # amzn-ami-2014.09.1-amazon-ecs-optimized-preview3
-    ami = "ami-801544e8"
+    ami = "ami-ecd5e884"
     instance_type = "t2.micro"
     count = 2
     associate_public_ip_address = true

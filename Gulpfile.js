@@ -14,6 +14,14 @@ var onError = function (err) {
     throw err;
 };
 
+console.log('env', {
+    ECSADMIN_BUCKET_NAME: process.env.ECSADMIN_BUCKET_NAME,
+    ECSADMIN_HOST_NAME: process.env.ECSADMIN_HOST_NAME,
+    ECSADMIN_ACCOUNT_NAME: process.env.ECSADMIN_ACCOUNT_NAME,
+    ECSADMIN_REGION: process.env.ECSADMIN_REGION || 'us-east-1',
+    key: process.env.AWS_ACCESS_KEY_ID,
+    secret: process.env.AWS_SECRET_ACCESS_KEY ? '<present>' : '<missing>',
+});
 
 gulp.task('set-production', function () {
     process.env.ECSADMIN_HOST_NAME = '.';
