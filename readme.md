@@ -107,6 +107,26 @@ TODO
     + this lets one install host multiple accounts
 
 
+Outline
+-------
+
+    Instance
+    - Tasks
+    - Status
+    - CPU Used
+    - Mem Used
+
+    Service
+    - Tasks
+    - Instances
+    - Status
+    - Desired/Running
+
+    Tasks
+    - Instance
+    - Status
+
+
 MIT License
 -----------
 
