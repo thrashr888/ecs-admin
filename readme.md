@@ -42,15 +42,22 @@ EOT
     > terraform plan
     > terraform apply
 
+
 Run
 ---
 
+If the server isn't running on port `8080`, run this:
+
+    > lsof -i :8080
+
+And maybe try `boot2docker stop`. Or turn off nginx, etc.
+
 You can use the gulp task:
 
-    > export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
-    > export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
-    > export ECSADMIN_ACCOUNT_NAME=testaccount
-    > gulp watch
+    export ECSADMIN_BUCKET_NAME=thrashr888-ecs-admin
+    export ECSADMIN_HOST_NAME=https://d3csuswr8p8yjt.cloudfront.net
+    export ECSADMIN_ACCOUNT_NAME=testaccount
+    gulp watch
 
 Or you can run the node server directly (after a `gulp build`):
 

@@ -14,8 +14,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "ecs" {
-    # amzn-ami-2014.09.1-amazon-ecs-optimized-preview3
-    ami = "ami-ecd5e884"
+    ami = "ami-ecd5e884" # amzn-ami-2015.03.a-amazon-ecs-optimized
     instance_type = "t2.micro"
     count = 2
     associate_public_ip_address = true
@@ -24,6 +23,7 @@ resource "aws_instance" "ecs" {
     key_name = "${var.ECS_KEYPAIR_NAME}"
     security_groups = ["${aws_security_group.ecs.id}"]
     iam_instance_profile = "AmazonECSContainerInstanceRole"
+
     tags {
         Name = "container"
     }
@@ -34,17 +34,30 @@ resource "aws_instance" "ecs" {
         ]
     }
 }
-#output "public_dns" {
-#    value = "${aws_instance.ecs.public_dns}"
-#}
 
-#resource "aws_eip" "ip" {
-#    instance = "${aws_instance.ecs.id}"
-#}
+resource "aws_elb" "ecs" {
+    name = "container-lb-01"
+    availability_zones = ["us-east-2b"]
 
-#output "ip" {
-#    value = "${aws_eip.ip.public_ip}"
-#}
+    listener {
+        instance_port = 8000
+        instance_protocol = "http"
+        lb_port = 80
+        lb_protocol = "http"
+    }
+
+    health_check {
+        healthy_threshold = 2
+        unhealthy_threshold = 2
+        timeout = 3
+        target = "TCP:80/"
+        interval = 30
+    }
+
+    subnets = ["${aws_subnet.ecs.id}"]
+    instances = ["${aws_instance.ecs.id}"]
+    cross_zone_load_balancing = true
+}
 
 resource "aws_vpc" "ecs" {
     cidr_block = "10.0.0.0/16"
@@ -53,6 +66,7 @@ resource "aws_vpc" "ecs" {
         Name = "ecs"
     }
 }
+
 resource "aws_subnet" "ecs" {
     vpc_id = "${aws_vpc.ecs.id}"
     cidr_block = "10.0.1.0/24"
@@ -70,19 +84,26 @@ resource "aws_security_group" "ecs" {
     ingress {
         from_port = 80
         to_port = 80
-        protocol = "-1"
+        protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
-    ingress {
-        from_port = 443
-        to_port = 443
-        protocol = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
+
     ingress {
         from_port = 22
         to_port = 22
-        protocol = "-1"
+        protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
 }
+
+output "public_dns" {
+    value = "${aws_elb.ecs.dns_name}"
+}
+
+#resource "aws_eip" "ip" {
+#    instance = "${aws_instance.ecs.id}"
+#}
+
+#output "ip" {
+#    value = "${aws_eip.ip.public_ip}"
+#}

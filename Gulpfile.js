@@ -1,19 +1,28 @@
 'use strict';
 
+
+// requires
 var gulp = require('gulp');
+var gulpgo = require("gulp-go");
+var gls = require('gulp-live-server');
 var browserSync = require('browser-sync');
 var reload      = browserSync.reload;
+var go;
+
 
 // Load plugins
 var $ = require('gulp-load-plugins')();
 
 
+// Print errors
 var onError = function (err) {
     //gutil.beep();
     console.error(err);
     throw err;
 };
 
+
+// Debug
 console.log('env', {
     ECSADMIN_BUCKET_NAME: process.env.ECSADMIN_BUCKET_NAME,
     ECSADMIN_HOST_NAME: process.env.ECSADMIN_HOST_NAME,
@@ -23,6 +32,8 @@ console.log('env', {
     secret: process.env.AWS_SECRET_ACCESS_KEY ? '<present>' : '<missing>',
 });
 
+
+// Set env
 gulp.task('set-production', function () {
     process.env.ECSADMIN_HOST_NAME = '.';
     process.env.BUILD_ENV = 'production';
@@ -30,6 +41,7 @@ gulp.task('set-production', function () {
 gulp.task('set-development', function () {
     process.env.BUILD_ENV = 'development';
 });
+
 
 // Deploy
 gulp.task('deploy', ['set-production', 'build'], function () {
@@ -158,12 +170,13 @@ gulp.task('bundle', ['styles', 'scripts', 'images', 'bower'], function () {
         .pipe(assets)
         .pipe(assets.restore())
         .pipe($.useref())
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('dist'))
+        .pipe(reload({stream: true}));
 });
 
 
 // Build
-gulp.task('build', ['html', 'bundle', 'images']);
+gulp.task('build', ['html', 'bundle']);
 
 
 // Default Task
@@ -187,61 +200,16 @@ gulp.task('server', function() {
         open: false,
     });
 });
-// gulp.task('server2', function() {
-//     process.env.DEBUG = 'server';
-//     browserSync.create().init({
-//         server: {
-//             // With custom request headers - Requires v2.1.0
-//             proxy: {
-//                 target: "ecs.us-east-1.amazonaws.com:443",
-//                 middeware: function (req, res, next) {
-//                     console.log(req.url);
-//                     res.header("Access-Control-Allow-Origin", "*");
-//                     next();
-//                 },
-//                 reqHeaders: function (config) {
-//                     console.log('req.config', config)
-//                     return {
-//                         // "host":            config.urlObj.host,
-//                         // "accept-encoding": "identity",
-//                         // "agent":           false
-//                         "Access-Control-Allow-Origin": "*"
-//                     }
-//                 }
-//             }
-//         },
-//         https: true,
-//         port: 8081,
-//         logLevel: "info",
-//         open: false,
-//         ui: {
-//             port: 3002
-//         }
-//     });
-// });
 
-// gulp.task('server2', function(){
-//     var connect = require('gulp-connect');
-//     connect.server({
-//         root: ['dist'],
-//         port: 8081,
-//         https: true,
-//         livereload: false,
-//         middleware: function(connect, o) {
-//           return [ (function(req) {
-//             console.log('connect.req', req)
-//               var url = require('url');
-//               var proxy = require('proxy-middleware');
-//               var options = url.parse('ecs.us-east-1.amazonaws.com:443');
-//               // options.route = '/api';
-//               return proxy(options);
-//           })() ];
-//         }
-//     });
-// });
+gulp.task('server2', function() {
+    var server = gls('proxyServer.js', {env: {NODE_ENV: 'development', PORT: 8081}});
+    server.start();
+    gulp.watch('proxyServer.js', server.start); //restart my server
+});
+
 
 // Watch
-gulp.task('watch', ['set-development', 'html', 'bundle', 'server'], function () {
+gulp.task('watch', ['set-development', 'html', 'bundle', 'server', 'server2'], function () {
 
     // Watch .html files
     gulp.watch('templates/*.html', ['html']);
@@ -256,5 +224,6 @@ gulp.task('watch', ['set-development', 'html', 'bundle', 'server'], function () 
 
     // Watch image files
     gulp.watch('images/**/*', ['images']);
+
 });
 

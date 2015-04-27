@@ -126,7 +126,8 @@ function fetchData () {
 		user.fetching = false;
 		if (err) {
 			console.error(err);
-			return;
+			// return false;
+            throw new Error(err);
 		}
 		user.families = data.families;
 
@@ -178,7 +179,8 @@ function fetchData () {
 		user.fetching = false;
 		if (err) {
 			console.error(err);
-			return;
+			// return false;
+            throw new Error(err);
 		}
 		user.clusterArns = data.clusterArns;
 		// console.debug(1, user)
@@ -295,7 +297,7 @@ function fetchData () {
 		});
 	});
 
-	// console.debug('u', user)
+	console.debug('u', user)
 
 	// setInterval(function () {
 	// 	console.debug('i', user)
@@ -314,14 +316,36 @@ function onLogin (access_token) {
 		}
 	});
 
- //    var ep = new AWS.Endpoint('localhost:8443');
- //    ecs = new AWS.ECS({endpoint: ep});
- //    ec2 = new AWS.EC2({endpoint: ep});
- //    s3 = new AWS.S3();
+    var proxyUrl = 'https://localhost:8081';
+    var ecsEndpointUrl = 'https://ecs.us-east-1.amazonaws.com';
 
-    ecs = new AWS.ECS();
-    s3 = new AWS.S3();
+    var ep = new AWS.Endpoint(proxyUrl);
+    // ep.host = ecsEndpointUrl;
+    // AWS.config.update({ httpOptions: { proxy: proxyUrl }});
+
+    ecs = new AWS.ECS({endpoint: ep});
+    // ecs = new AWS.ECS();
+    // ecs.endpoint.host == ecsEndpointUrl;
+    // ecs.endpoint.hostname == ecsEndpointUrl;
+    // ecs.test == ecsEndpointUrl;
+    // ecs.config.endpoint.port == '443';
+    // ecs.config.endpoint.host == ecsEndpointUrl;
+    // ecs.config.endpoint.hostname == ecsEndpointUrl;
+    console.log(ecs)
+
+    // ec2 = new AWS.EC2({endpoint: ep});
+    // ec2.endpoint.hostname == proxyUrl;
+    // ec2.config.endpoint.hostname == proxyUrl;
+
+    // s3 = new AWS.S3({endpoint: ep});
+
+    // ecs = new AWS.ECS();
     ec2 = new AWS.EC2();
+    s3 = new AWS.S3();
+
+
+    // ecs = new AWS.ECS({httpOptions: { proxy: proxyUrl}});
+    // ec2 = new AWS.EC2({httpOptions: { proxy: proxyUrl}});
 
 	fetchData();
 
@@ -424,14 +448,20 @@ class InstanceComponent extends React.Component {
   }
 
     render() {
-        console.debug('instance.props', this.props)
+        // console.debug('instance.props', this.props.instance)
+        let launchTime = this.props.instance.LaunchTime.getDate() + "/"
+            + (this.props.instance.LaunchTime.getMonth()+1)  + "/"
+            + this.props.instance.LaunchTime.getFullYear() + " @ "
+            + this.props.instance.LaunchTime.getHours() + ":"
+            + this.props.instance.LaunchTime.getMinutes() + ":"
+            + this.props.instance.LaunchTime.getSeconds();
         return (
             <div className="instance">
                 <h4>{this.props.instance.KeyName} ({this.props.instance.InstanceId})</h4>
 
                 <ul>
                     <li><b>Architecture:</b> {this.props.instance.Architecture}</li>
-                    <li><b>Block Device Mappings:</b> <ul>{this.props.instance.BlockDeviceMappings.map(m => <li>{m.DeviceName + ': ' + m.Ebs.VolumeId}</li>)}</ul></li>
+                    <li><b>Block Device Mappings:</b> <ul>{this.props.instance.BlockDeviceMappings.map(m => <li><b>{m.DeviceName}:</b> {m.Ebs.VolumeId}</li>)}</ul></li>
                     <li><b>Client Token:</b> {this.props.instance.ClientToken}</li>
                     <li><b>EBS Optimized:</b> {this.props.instance.EbsOptimized ? 'Yes' : 'No'}</li>
                     <li><b>Hypervisor:</b> {this.props.instance.Hypervisor}</li>
@@ -440,14 +470,13 @@ class InstanceComponent extends React.Component {
                     <li><b>Instance Id:</b> {this.props.instance.InstanceId}</li>
                     <li><b>Instance Type:</b> {this.props.instance.InstanceType}</li>
                     <li><b>Key Name:</b> {this.props.instance.KeyName}</li>
-                    <li><b>Launch Time:</b> {this.props.instance.LaunchTime}</li>
+                    <li><b>Launch Time:</b> {launchTime}</li>
                     <li><b>Monitoring State:</b> {this.props.instance.Monitoring.State}</li>
-                    <li><b>Network Interfaces:</b> {this.props.instance.NetworkInterfaces.map(i => i).join(', ')}</li>
                     <li><b>Placement:</b> {this.props.instance.Placement.AvailabilityZone}</li>
                     <li><b>Private DNS Name:</b> {this.props.instance.PrivateDnsName}</li>
                     <li><b>Private IP Address:</b> {this.props.instance.PrivateIpAddress}</li>
-                    <li><b>Product Codes:</b> {this.props.instance.ProductCodes}</li>
-                    <li><b>Public DNS Name:</b> <a href="http://{this.props.instance.PublicDnsName}" target="_blank">{this.props.instance.PublicDnsName}</a></li>
+                    <li><b>Product Codes:</b> {this.props.instance.ProductCodes.length > 0 ? this.props.instance.ProductCodes.join(', ') : 'None'}</li>
+                    <li><b>Public DNS Name:</b> <a href={'http://' + this.props.instance.PublicDnsName + '/'} target="_blank">{this.props.instance.PublicDnsName}</a></li>
                     <li><b>Public IP Address:</b> {this.props.instance.PublicIpAddress}</li>
                     <li><b>Root Device Name:</b> {this.props.instance.RootDeviceName}</li>
                     <li><b>Root Device Type:</b> {this.props.instance.RootDeviceType}</li>
@@ -455,9 +484,9 @@ class InstanceComponent extends React.Component {
                     <li><b>Source Dest Check:</b> {this.props.instance.SourceDestCheck ? 'Yes' : 'No'}</li>
                     <li><b>State:</b> {this.props.instance.State ? (this.props.instance.State.Name) : 'N/A'}</li>
                     <li><b>State Reason:</b> {this.props.instance.StateReason ? (this.props.instance.StateReason.Message) : 'n/a'}</li>
-                    <li><b>State Transition Reason:</b> {this.props.instance.StateTransitionReason}</li>
+                    {this.props.instance.StateTransitionReason? <li><b>State Transition Reason:</b> {this.props.instance.StateTransitionReason}</li> : null}
                     <li><b>Subnet:</b> {this.props.instance.SubnetId}</li>
-                    <li><b>Tags:</b> <ul>{this.props.instance.Tags.map(t => <li>{t.Key + ': ' + t.Value}</li>)}</ul></li>
+                    <li><b>Tags:</b> <ul>{this.props.instance.Tags.map(t => <li><b>{t.Key}:</b> {t.Value}</li>)}</ul></li>
                     <li><b>Virtualization Type:</b> {this.props.instance.VirtualizationType}</li>
                     <li><b>VPC:</b> {this.props.instance.VpcId}</li>
                 </ul>
@@ -478,13 +507,13 @@ class InstanceReservationComponent extends React.Component {
   }
 
     render() {
-        console.debug('instanceReservation.props', this.props)
+        console.debug('instanceReservation.props', this.props.instance)
         return (
             <div className="instance-reservation">
                 <ul className="list-group">
                     <li className="list-group-item"><b>Reservation Id:</b> {this.props.instance.ReservationId}</li>
                     <li className="list-group-item"><b>Owner Id:</b> {this.props.instance.OwnerId}</li>
-                    <li className="list-group-item"><b>Groups:</b> {this.props.instance.Groups ? this.props.instance.Groups.join(', ') : 'None'}</li>
+                    <li className="list-group-item"><b>Groups:</b> {this.props.instance.Groups.length > 0 ? this.props.instance.Groups.join(', ') : 'None'}</li>
                     <li className="list-group-item"><h3>Instances:</h3> {
                         this.props.instance.Instances.map(instance => <InstanceComponent instance={instance} />)
                     }</li>
@@ -533,6 +562,80 @@ ContainerInstanceComponent.propTypes = {
     cluster: React.PropTypes.object
 };
 
+class CreateServiceComponent extends React.Component {
+
+    constructor(props) {
+        super(props);
+
+        this.onSubmit = this.onSubmit.bind(this);
+
+        this.state = {
+            serviceName: '',
+            cluster: this.props.clusters[0].clusterName,
+            desiredCount: 0,
+            loadBalancers: [],
+            role: '',
+            taskDefinition: this.props.taskDefinition || ''
+        };
+    }
+
+    onSubmit() {
+        var params = {
+          serviceName: this.state.serviceName,
+          clientToken: 'nx7t0awb78',
+          cluster: this.state.cluster,
+          desiredCount: this.state.desiredCount || 0,
+          loadBalancers: this.state.loadBalancers,
+          role: this.state.role,
+          taskDefinition: this.state.taskDefinition,
+        };
+        ecs.createService(params, function(err, data) {
+          if (err) console.log(err, err.stack); // an error occurred
+          else     console.log(data);           // successful response
+        });
+    }
+
+    handleHide() {
+
+    }
+
+    renderForm() {
+        return (
+            <form onSubmit={this.onSubmit}>
+                <label>Service Name</label> <input type="text" value={this.state.serviceName} />
+                <label>Cluster</label> <input type="text" value={this.state.cluster} />
+                <label>Desired Count</label> <input type="text" value={this.state.desiredCount} placeholder="0" />
+                <label>Load Balancers</label>
+                    <label>Container Name</label> <input type="text" value={this.state.containerName} />
+                    <label>Container Port</label> <input type="text" value={this.state.containerPort} />
+                    <label>Load Balancer Name</label> <input type="text" value={this.state.loadBalancerName} />
+                <label>Role</label> <input type="text" value={this.state.role} />
+                <label>Task Definition</label> <input type="text" value={this.state.taskDefinition} />
+            </form>
+        )
+    }
+
+    render() {
+        return (
+          <div className='static-modal'>
+            <Modal title='Create a Service'
+              bsStyle='primary'
+              backdrop={false}
+              animation={false}
+              onRequestHide={handleHide}>
+              <div className='modal-body'>
+                {this.renderForm()}
+              </div>
+              <div className='modal-footer'>
+                <Button>Close</Button>
+                <Button bsStyle='primary'>Save changes</Button>
+              </div>
+            </Modal>
+          </div>
+        )
+    }
+}
+
 class ServiceComponent extends React.Component {
 
   constructor(props) {
@@ -545,8 +648,9 @@ class ServiceComponent extends React.Component {
   }
 
   render() {
+
     var deployments = this.props.service.deployments.map(function (dep) {
-        return <ul>
+        return <ul key={dep.id}>
             <li><b>Created At:</b> {dep.createdAt}</li>
             <li><b>Desired Count:</b> {dep.desiredCount}</li>
             <li><b>Id:</b> {dep.id}</li>
@@ -557,9 +661,15 @@ class ServiceComponent extends React.Component {
             <li><b>Updated At:</b> {dep.updatedAt}</li>
         </ul>
     });
+
     var events = this.props.service.events.map(function (ev) {
-        return <tr><td>{ev.id}:</td><td>{ev.message}</td><td>{ev.createdAt}</td></tr>
+        return <tr key={ev.id}>
+            <td>{ev.id}:</td>
+            <td>{ev.message}</td>
+            <td>{ev.createdAt}</td>
+        </tr>
     });
+
     return (
         <div className="service">
             <ul className="list-group">
@@ -617,9 +727,12 @@ class TaskComponent extends React.Component {
   }
 
   render() {
-  	// console.debug('task.props', this.props.task);
+  	console.debug('task.props', this.props.task);
+
     let containers = this.props.task.containers.map(c => c.name + ': ' + c.lastStatus).join(', ');
+
     let containerOverrides = this.props.task.overrides.containerOverrides.map(o => Object.keys(o).map(k => k + ': ' + o[k])).join(', ');
+
     return (
         <div className="task">
         	<ul className="list-group">
@@ -685,18 +798,18 @@ class ContainerDefinitionComponent extends React.Component {
 	}
 
 	render() {
-	  	// console.debug('containerDefinition.props', this.props.containerDefinition);
+	  	console.debug('containerDefinition.props', this.props.containerDefinition);
+
 		return (
 			<ul className="list-group">
 				<li className="list-group-item"><b>CPU:</b> {this.props.containerDefinition.cpu}</li>
 				<li className="list-group-item"><b>Environment:</b> {this.props.containerDefinition.environment.join(', ')}</li>
 				<li className="list-group-item"><b>Essential:</b> {this.props.containerDefinition.essential ? 'yes' : 'no'}</li>
 				<li className="list-group-item"><b>Image:</b> {this.props.containerDefinition.image}</li>
-				<li className="list-group-item"><b>CPU:</b> {this.props.containerDefinition.cpu}</li>
 				<li className="list-group-item"><b>Memory:</b> {this.props.containerDefinition.memory}</li>
 				<li className="list-group-item"><b>Name:</b> {this.props.containerDefinition.name}</li>
 				<li className="list-group-item"><b>Mount Points:</b> {this.props.containerDefinition.mountPoints.join(', ')}</li>
-				<li className="list-group-item"><b>Port Mappings:</b> {this.props.containerDefinition.portMappings.join(', ')}</li>
+				<li className="list-group-item"><b>Port Mappings:</b> {this.props.containerDefinition.portMappings.map(pm => pm.containerPort + ':' + pm.hostPort)}</li>
 				<li className="list-group-item"><b>Volumes From:</b> {this.props.containerDefinition.volumesFrom.join(', ')}</li>
 			</ul>
 		);
@@ -749,13 +862,15 @@ class TaskDefinitionComponent extends React.Component {
   }
 
 	render() {
-	  	// console.debug('taskDefinition.props', this.props.taskDefinition);
+	  	console.debug('taskDefinition.props', this.props.taskDefinition);
+
 		var containerDefinitions = [];
 		if (this.props.taskDefinition.containerDefinitions) {
-			this.props.taskDefinition.containerDefinitions.map(function (containerDefinition) {
-				return <ContainerDefinitionComponent containerDefinition={containerDefinition}></ContainerDefinitionComponent>
+			containerDefinitions = this.props.taskDefinition.containerDefinitions.map(function (containerDefinition) {
+				return <ContainerDefinitionComponent containerDefinition={containerDefinition} />
 			});
 		}
+
 		return (
 			<div>
 				<h2>TaskDefinition</h2>
