@@ -119,6 +119,9 @@ function setConfigValue (key, val, cb) {
     });
 }
 
+// switch to fetch with `no-cors`?
+// http://updates.html5rocks.com/2015/03/introduction-to-fetch
+
 function fetchData () {
     user.families = [];
 	user.fetching = true;

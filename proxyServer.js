@@ -12,9 +12,6 @@ var server = httpProxy.createServer({
         host: 'ecs.us-east-1.amazonaws.com:443'
     },
     secure: true
-}, function (req, res) {
-    console.log('\n\nProxying https request at %s', new Date());
-    console.log('--> req', req.method, req.headers)
 });
 
 server.listen(8081, function(err) {
@@ -26,6 +23,14 @@ server.listen(8081, function(err) {
     // console.log('server', server)
     console.log('\nCreated https proxy. Forwarding requests from %s to %s', '8081', server.options.target);
 
+});
+
+server.on('proxyReq', function(proxyReq, req, res, options) {
+    console.log('proxyReq', proxyReq.method, proxyReq.path);
+});
+
+server.on('error', function(err, req, res, target) {
+    console.error('ERR', err);
 });
 
 // http://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html

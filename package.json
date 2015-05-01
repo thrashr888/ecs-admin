@@ -8,7 +8,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js"
+    "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js",
+    "dev": "gulp watch"
   },
   "keywords": [
     "ecs",

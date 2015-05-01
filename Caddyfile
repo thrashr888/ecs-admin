@@ -1,0 +1,17 @@
+
+https://localhost:8080 {
+    errors ./errors.log
+    ext .html
+    gzip
+    header /api {
+        Access-Control-Allow-Origin  *
+        Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    }
+    log ./access.log
+    proxy /ecs https://ecs.us-east-1.amazonaws.com:443
+    root dist
+    startup "npm run-script dev"
+    templates
+    tls node_modules/browser-sync/lib/server/certs/server.crt node_modules/browser-sync/lib/server/certs/server.key
+    websocket /echo cat
+}
