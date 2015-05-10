@@ -9,7 +9,8 @@
   "main": "index.js",
   "scripts": {
     "install": "node node_modules/aws-sdk/dist-tools/browser-builder.js ecs,ec2,cognitoidentity > scripts/aws-sdk-ecs.js",
-    "dev": "gulp watch"
+    "dev": "node_modules/.bin/gulp watch",
+    "start": "node_modules/.bin/gulp server"
   },
   "keywords": [
     "ecs",
@@ -20,27 +21,22 @@
   "author": "Paul Thrasher <thrashr888@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "bootstrap-sass": "^3.3.3",
-    "connect-livereload": "^0.5.3",
     "express": "^4.12.2",
-    "gulp-live-server": "0.0.14",
     "http2": "^3.2.0",
     "immutable": "^3.6.4",
-    "jquery": "^2.1.3",
-    "level-js": "^2.1.6",
     "mime-types": "^2.0.9",
-    "pouchdb": "^3.3.1",
-    "react": "^0.13.0",
-    "react-bootstrap": "^0.19.0",
     "reflux": "^0.2.7",
     "spdy": "^1.31.0"
   },
   "devDependencies": {
     "aws-sdk": "^2.1.16",
     "babelify": "^5.0.4",
+    "bootstrap-sass": "^3.3.3",
     "browser-sync": "^2.3.1",
     "browserify": "^9.0.3",
+    "bn.js": "^0.15.0",
     "bunyan": "^1.3.4",
+    "connect-livereload": "^0.5.3",
     "debug": "^2.1.2",
     "envify": "^3.3.1",
     "gulp": "^3.8.11",
@@ -49,7 +45,7 @@
     "gulp-cache": "^0.2.8",
     "gulp-filter": "^2.0.2",
     "gulp-imagemin": "^2.2.1",
-    "gulp-live-server": "^0.0.6",
+    "gulp-live-server": "^0.0.14",
     "gulp-load-plugins": "^0.8.1",
     "gulp-nodemon": "^1.0.5",
     "gulp-plumber": "^1.0.0",
@@ -60,7 +56,12 @@
     "gulp-size": "^1.2.1",
     "gulp-sourcemaps": "^1.5.0",
     "gulp-useref": "^1.1.1",
+    "jquery": "^2.1.3",
+    "level-js": "^2.1.6",
     "observe-js": "^0.4.2",
+    "pouchdb": "^3.3.1",
+    "react": "^0.13.0",
+    "react-bootstrap": "^0.19.0",
     "react-tools": "^0.13.1",
     "reactify": "^1.0.0",
     "through": "^2.3.6"

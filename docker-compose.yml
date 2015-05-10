@@ -1,0 +1,18 @@
+nginx:
+    image: nginx
+    volumes:
+        - nginx:/etc/nginx:ro
+        - dist:/usr/share/nginx/html:ro
+    links:
+        - node1:node1
+    ports:
+        - "80:80"
+node1:
+    build: .
+    command: node_modules/.bin/gulp watch
+    ports:
+        - "8080"
+    environment:
+        ECSADMIN_BUCKET_NAME: thrashr888-ecs-admin
+        ECSADMIN_HOST_NAME: https://d3csuswr8p8yjt.cloudfront.net
+        ECSADMIN_ACCOUNT_NAME: testaccount

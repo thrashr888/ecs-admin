@@ -3,11 +3,9 @@
 
 // requires
 var gulp = require('gulp');
-var gulpgo = require("gulp-go");
 var gls = require('gulp-live-server');
 var browserSync = require('browser-sync');
 var reload      = browserSync.reload;
-var go;
 
 
 // Load plugins
@@ -201,15 +199,9 @@ gulp.task('server', function() {
     });
 });
 
-gulp.task('server2', function() {
-    var server = gls('proxyServer.js', {env: {NODE_ENV: 'development', PORT: 8081}});
-    server.start();
-    gulp.watch('proxyServer.js', server.start); //restart my server
-});
-
 
 // Watch
-gulp.task('watch', ['set-development', 'html', 'bundle', 'server', 'server2'], function () {
+gulp.task('watch', ['set-development', 'html', 'bundle', 'server'], function () {
 
     // Watch .html files
     gulp.watch('templates/*.html', ['html']);

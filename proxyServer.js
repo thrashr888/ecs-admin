@@ -14,7 +14,7 @@ var server = httpProxy.createServer({
     secure: true
 });
 
-server.listen(8081, function(err) {
+server.listen(8081, function (err) {
 
     if (err) {
         console.log('Error serving https proxy request: %s', req);
@@ -25,11 +25,14 @@ server.listen(8081, function(err) {
 
 });
 
-server.on('proxyReq', function(proxyReq, req, res, options) {
-    console.log('proxyReq', proxyReq.method, proxyReq.path);
+// server.on('proxyReq', function (proxyReq, req, res, options) {
+//     console.log('proxyReq', proxyReq.method, proxyReq.path);
+// });
+server.on('proxyRes', function (proxyRes, req, res) {
+  console.log('RAW Response from the target', proxyRes.statusCode, proxyRes.statusMessage, JSON.stringify(proxyRes.headers, true, 2));
+  // console.log(proxyRes)
 });
-
-server.on('error', function(err, req, res, target) {
+server.on('error', function (err, req, res, target) {
     console.error('ERR', err);
 });
 
