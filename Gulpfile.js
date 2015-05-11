@@ -27,7 +27,7 @@ console.log('env', {
     ECSADMIN_ACCOUNT_NAME: process.env.ECSADMIN_ACCOUNT_NAME,
     ECSADMIN_REGION: process.env.ECSADMIN_REGION || 'us-east-1',
     key: process.env.AWS_ACCESS_KEY_ID,
-    secret: process.env.AWS_SECRET_ACCESS_KEY ? '<present>' : '<missing>',
+    secret: process.env.AWS_SECRET_ACCESS_KEY ? '<present>' : undefined,
 });
 
 
